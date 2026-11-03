@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "نسايم للمنظفات"
+description = "نظام إدارة متجر نسايم للمنظفات لمتابعة المنتجات والمخزون والمبيعات والتوريدات والفواتير والأرباح التقديرية والتنبيهات عبر الأجهزة، مع تسجيل دخول وصلاحيات."
+version = "1.0.0"
+id = "artifacts/nasaem-inventory"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22615
+
+[services.development]
+run = "pnpm --filter @workspace/nasaem-inventory run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nasaem-inventory", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nasaem-inventory/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22615"
+BASE_PATH = "/"

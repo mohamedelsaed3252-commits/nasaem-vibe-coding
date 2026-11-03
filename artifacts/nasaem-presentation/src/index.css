@@ -1,0 +1,123 @@
+@import 'tailwindcss';
+@font-face{font-family:'Tajawal';font-style:normal;font-weight:700;font-display:block;src:url('./assets/fonts/tajawal-bold.ttf') format('truetype')}
+@font-face{font-family:'Tajawal';font-style:normal;font-weight:900;font-display:block;src:url('./assets/fonts/tajawal-black.ttf') format('truetype')}
+@font-face{font-family:'Noto Sans';font-style:normal;font-weight:700;font-display:block;src:url('./assets/fonts/noto-sans-bold.ttf') format('truetype')}
+@theme inline { --color-primary:var(--slide-primary); --color-accent:var(--slide-accent); --color-bg:var(--slide-bg); --color-text:var(--slide-text); --color-muted:var(--slide-muted); --font-display:var(--font-display-family); --font-body:var(--font-body-family); }
+:root { --slide-primary:#244a3b; --slide-accent:#b94339; --slide-yellow:#f0c84e; --slide-bg:#f9f7f0; --slide-text:#243a30; --slide-muted:#67756c; --font-display-family:'Tajawal',sans-serif; --font-body-family:'Tajawal',sans-serif; color-scheme:light; }
+html,body,#root { width:100%;height:100%;margin:0; } body {background:var(--slide-bg);color:var(--slide-text)}
+.slide {width:100vw;height:100vh;overflow:hidden}.slide-viewer{touch-action:none;user-select:none;-webkit-user-select:none}
+.deck {background:var(--slide-bg);font-family:var(--font-body-family);font-weight:700;font-synthesis:none;direction:rtl;isolation:isolate}
+.deck h1,.deck h2,.deck p,.deck ul{margin:0}.deck h1,.deck h2{font-family:var(--font-display-family);font-weight:900;text-wrap:balance}
+.deck h2{position:absolute;top:7vh;right:6vw;left:8vw;font-size:3.8vw;line-height:1.22;z-index:2}
+.mark{position:absolute;left:6vw;top:6vh;width:3.5vw;height:3.5vw;border-radius:1.1vw 1.1vw 1.1vw .2vw;display:grid;place-items:center;background:var(--slide-yellow);color:var(--slide-primary);font-weight:900;font-size:2.5vw;line-height:1;direction:ltr;z-index:3;transform:rotate(-5deg)}
+.blob{position:absolute;z-index:-1;pointer-events:none;background:#e7eee5;border-radius:54% 46% 37% 63% / 38% 61% 39% 62%;width:39vw;height:80vh;left:0;bottom:0}
+.blob-small{position:absolute;z-index:-1;pointer-events:none;background:var(--slide-yellow);opacity:.22;width:27vw;height:25vh;right:0;top:0;border-radius:0 0 0 100%}
+.deck ul{list-style:none;padding:0;display:flex;flex-direction:column;gap:2.4vh}
+.deck li{font-size:2.2vw;line-height:1.42;font-weight:700;text-wrap:pretty;position:relative;padding-right:2vw}
+.deck li:before{content:'';position:absolute;right:0;top:.63em;width:.6vw;height:.6vw;border-radius:40%;background:var(--slide-accent)}
+.photo{position:absolute;object-fit:cover;z-index:0}.photo-copy{position:absolute;right:6vw;top:31vh;width:46vw;z-index:2}
+.brand-logos{position:absolute;right:6vw;bottom:6vh;display:flex;direction:ltr;align-items:center;gap:2.4vw;z-index:4;background:#f9f7f0;border-radius:1vw;padding:1.2vh 1vw}
+.replit-logo{display:flex;align-items:center;gap:.5vw;font-size:1.9vw;font-weight:700;color:#373737}.replit-logo img{width:2.7vw;height:2.7vw}.nord-logo{width:12.5vw;height:3.7vw;object-fit:contain;mix-blend-mode:multiply}
+.cover .photo{left:0;top:0;width:45vw;height:100vh;border-radius:0 40% 0 0}
+.cover h1{position:absolute;right:6vw;top:17vh;width:46vw;font-size:6.5vw;line-height:1.2;color:var(--slide-accent)}
+.cover .subtitle{position:absolute;right:6vw;top:44vh;width:43vw;font-size:2.3vw;line-height:1.4;font-weight:700}
+.cover .credits{position:absolute;right:6vw;top:63vh;width:45vw;display:flex;flex-direction:column;gap:2vh}.credits p{font-size:1.65vw;line-height:1.45;unicode-bidi:plaintext}.cover .mark{right:6vw;left:auto;top:6vh}
+.cover .blob{left:35vw;bottom:0;height:24vh;width:30vw;background:var(--slide-yellow);opacity:.22}
+.story h2{left:48vw}.story .photo{left:0;top:0;width:43vw;height:100vh;border-radius:0 0 45% 0}.story .photo-copy{top:34vh;width:46vw}.story .mark{left:46vw}
+.overview .hub{position:absolute;left:6vw;top:29vh;width:29vw;height:57vh;border-radius:46% 54% 62% 38% / 57% 33% 67% 43%;background:var(--slide-primary);display:grid;place-items:center;color:var(--slide-yellow);font-size:15vw;font-weight:900;direction:ltr}
+.overview ul{position:absolute;right:6vw;top:31vh;width:50vw;gap:3.4vh}.overview li{border-bottom:1px solid #ccd6cb;padding-bottom:1.7vh}
+.stock .photo{left:0;top:0;width:40vw;height:100vh;border-radius:0 0 32% 0}.stock h2{left:44vw}.stock .photo-copy{top:34vh;width:48vw}.stock .blob-small{height:30vh}.stock .mark{left:43vw}
+.sales .receipt{position:absolute;right:6vw;left:30vw;top:28vh;bottom:9vh;background:#fffdf7;padding:3.5vh 3vw;border-top:.65vw solid var(--slide-accent);box-shadow:0 1.5vh 4vw #244a3b0c}.sales ul{gap:3.2vh}.sales li{border-bottom:1px dashed #ccd6cb;padding-bottom:1.4vh}
+.sales .barcode{position:absolute;left:6vw;top:37vh;width:16vw;height:38vh;color:var(--slide-primary)}.sales .blob{width:26vw;height:65vh;background:#e4ebdf}
+.scan h2{left:6vw}.scan .photo{left:6vw;top:28vh;width:39vw;height:61vh;border-radius:8vw 1.6vw 1.6vw 1.6vw}.scan .photo-copy{right:6vw;top:29vh;width:45vw}.scan li{font-size:2.05vw}.scan ul{gap:2.2vh}.scan .scan-frame{position:absolute;left:10vw;top:46vh;width:31vw;height:19vh;border:.25vw solid var(--slide-yellow);border-radius:1.2vw;z-index:1}
+.supplies .stripe{position:absolute;left:0;top:0;width:32vw;height:100vh;background:var(--slide-primary);border-radius:0 0 40% 0;z-index:-1}.supplies ul{position:absolute;right:6vw;top:31vh;width:55vw;gap:3.5vh}.supplies .flow{position:absolute;left:8vw;top:29vh;width:16vw;height:53vh;color:#f0c84e}.supplies .mark{background:var(--slide-yellow)}
+.debts .large-sign{position:absolute;left:7vw;top:29vh;font-weight:900;font-size:18vw;line-height:1;color:var(--slide-accent);direction:ltr}.debts ul{position:absolute;right:6vw;top:31vh;width:57vw;gap:3.5vh}.debts .blob{background:#f2ded5;width:31vw;height:65vh}
+.profit .equation{position:absolute;right:6vw;left:6vw;top:31vh;display:grid;grid-template-columns:1fr 1fr;gap:3vh 4vw;align-items:start}.profit .term{font-size:2.3vw;line-height:1.4;padding:2.2vh 0;border-bottom:1px solid #bac9ba}.profit .result{background:var(--slide-primary);color:#f9f7f0;padding:4vh 2.4vw;border-radius:1vw;font-size:3vw;font-weight:700;line-height:1.3}.profit .note{position:absolute;right:6vw;bottom:12vh;width:84vw;font-size:2.1vw;line-height:1.45;color:var(--slide-muted)}.profit .blob{width:38vw;height:39vh;background:#f2e7bc}
+.expenses h2{left:6vw}.expenses .photo{left:0;bottom:0;width:100vw;height:44vh;object-position:center 58%;border-radius:15vw 0 0 0}.expenses ul{position:absolute;right:6vw;top:27vh;width:87vw;display:grid;grid-template-columns:1fr 1fr;gap:3vh 4vw}.expenses li{font-size:2.1vw}.expenses .blob{background:#f0e5bb;left:0;top:0;height:50vh}
+.security ul{position:absolute;right:6vw;top:31vh;width:55vw;gap:3.5vh}.security .shield{position:absolute;left:6vw;top:31vh;width:27vw;height:53vh;color:var(--slide-primary)}.security .blob{width:38vw;height:65vh;background:#e1e9dc}.security .shield path{stroke-linecap:round;stroke-linejoin:round}
+.closing .photo{left:0;top:0;width:42vw;height:100vh;border-radius:0 45% 0 0}.closing h1{position:absolute;right:6vw;top:18vh;width:49vw;font-size:5.3vw;line-height:1.25;color:var(--slide-primary)}.closing .subtitle{position:absolute;right:6vw;top:42vh;width:48vw;font-size:2.2vw;line-height:1.4;font-weight:700}.closing .credits{position:absolute;right:6vw;top:58vh;width:48vw;display:flex;flex-direction:column;gap:1.2vh}.closing .mark{right:6vw;left:auto}.closing .brand-logos{bottom:4vh}.closing .blob{background:#f0c84e;opacity:.25;left:33vw;width:32vw;height:28vh}
+
+/* Shared editorial rhythm, with clear contrast and generous presentation spacing. */
+.deck::after{position:absolute;right:6vw;bottom:3.2vh;font-size:1.5vw;font-weight:700;color:var(--slide-muted);letter-spacing:.06em;direction:ltr}
+.cover::after,.closing::after{display:none}
+.story::after{content:'02 / 12'}.overview::after{content:'03 / 12'}
+.stock::after{content:'04 / 12'}.sales::after{content:'05 / 12'}
+.scan::after{content:'06 / 12'}.supplies::after{content:'07 / 12'}
+.debts::after{content:'08 / 12'}.profit::after{content:'09 / 12'}
+.expenses::after{content:'10 / 12'}.security::after{content:'11 / 12'}
+.deck h2{font-size:3.65vw;line-height:1.28;color:var(--slide-primary);left:12vw}
+.deck li{line-height:1.42;padding-right:2.15vw}
+.deck li:before{width:.52vw;height:.52vw;top:.65em;border-radius:50%}
+.mark{box-shadow:.35vw .35vw 0 #244a3b14}
+.photo{filter:none;image-rendering:auto;object-position:center}
+.blob-small{opacity:.16}
+.brand-logos{gap:2vw;padding:1.6vh 1.2vw;border:1px solid #244a3b16}
+.cover h1{font-size:6.3vw;top:18vh}
+.cover .subtitle{top:45vh;line-height:1.5}
+.cover .credits,.closing .credits{border-top:1px solid #244a3b30;padding-top:2.4vh}
+.cover .credits{top:62vh}
+.story h2{left:47vw}
+.story .photo-copy{top:35vh}
+.overview .hub{font-size:13vw;box-shadow:1.3vw 1.5vh 0 #f0c84e}
+.overview ul{gap:2.5vh}
+.overview li{padding-bottom:1.5vh}
+.stock h2{left:43vw}
+.stock .photo-copy{top:33vh}
+.sales .receipt{border-radius:1vw 1vw 0 0;padding-top:4vh}
+.sales .receipt::after{content:'';position:absolute;right:0;left:0;bottom:-1.5vh;height:1.6vh;background:linear-gradient(135deg,#fffdf7 25%,transparent 25%) -.5vw 0/1vw 1.6vh,linear-gradient(225deg,#fffdf7 25%,transparent 25%) -.5vw 0/1vw 1.6vh}
+.sales ul{gap:2.5vh}
+.scan .photo{border-radius:5vw 1.5vw 1.5vw 1.5vw}
+.scan .scan-frame{border-width:.3vw;box-shadow:0 0 0 .45vw #244a3b18}
+.scan ul{gap:2.6vh}
+.supplies ul,.debts ul,.security ul{gap:3vh}
+.debts .large-sign{font-size:16vw;top:34vh}
+.security ul{width:56vw}
+.security .shield{left:7vw;width:25vw}
+.profit .equation{right:6vw;left:auto;top:29vh;width:49vw;display:flex;flex-direction:column;gap:2vh}
+.profit .term{width:100%;font-size:2.2vw;line-height:1.45;padding:2vh 0 2vh 3vw;position:relative}
+.profit .revenue{font-weight:700;border-bottom:2px solid var(--slide-primary)}
+.profit .deduction{color:var(--slide-accent)}
+.profit .operator{position:absolute;left:0;top:1vh;font-size:3.5vw;font-weight:700}
+.profit-outcome{position:absolute;left:6vw;top:30vh;width:32vw;min-height:41vh;padding:5vh 3vw;border-radius:2vw;background:var(--slide-primary);display:flex;flex-direction:column;justify-content:center;gap:2vh}
+.profit .equals{font-size:5vw;line-height:1;color:var(--slide-yellow);font-weight:700;direction:ltr}
+.profit .result{font-size:3.3vw;line-height:1.45;padding:0;border-radius:0}
+.profit .note{bottom:13vh;font-size:2vw;padding-top:2.3vh;border-top:1px solid #244a3b30}
+.expenses ul{top:26vh;gap:3vh 4vw}
+.closing h1{top:17vh;font-size:5.1vw}
+.closing .subtitle{top:40vh}
+.closing .credits{top:56vh;gap:1vh}
+
+/* High-contrast type on every slide; supporting copy is never light or faded. */
+:root{--slide-text:#193b2d;--slide-muted:#354d40;--slide-accent:#a32e28}
+.deck .credits p{font-size:1.8vw;font-weight:700;line-height:1.4}
+.deck .credits .supervisor-credit{font-family:'Noto Sans','Tajawal',sans-serif;font-size:1.65vw;line-height:1.4;font-weight:700;color:var(--slide-accent)}
+.deck .note,.deck .term,.deck .subtitle{font-weight:700}
+.scan li,.expenses li{font-size:2.2vw}
+.scan ul{gap:2vh}
+.stock .photo-copy{width:49vw}
+.story .photo-copy{width:47vw}
+.security ul{width:57vw}
+.deck .brand-logos{background:#f9f7f0}
+.closing a{font-size:1.7vw;font-weight:700}
+.profit .note{color:var(--slide-primary)}
+.expenses .photo{object-position:center}
+
+/* Every slide has a subject photograph, kept separate from readable text. */
+.deck li,.scan li,.expenses li{font-size:2.25vw;font-weight:700;line-height:1.42}
+.overview .photo{left:6vw;top:28vh;width:35vw;height:60vh;border-radius:9vw 2vw 9vw 2vw}
+.overview ul{right:6vw;top:29vh;width:47vw;gap:2.2vh}
+.sales .photo{left:6vw;top:28vh;width:32vw;height:61vh;border-radius:2vw}
+.sales .receipt{left:44vw;right:6vw;padding:3vh 2.3vw;bottom:11vh}
+.sales ul{gap:2vh}
+.sales li{padding-bottom:1vh}
+.supplies ul{top:29vh;right:6vw;width:47vw;display:flex;flex-direction:column;gap:2.6vh}
+.supplies .photo{left:6vw;top:28vh;width:35vw;height:61vh;border-radius:2vw;object-position:center}
+.debts .photo{left:6vw;top:28vh;width:35vw;height:60vh;border-radius:2vw 8vw 2vw 2vw}
+.debts ul{right:6vw;top:30vh;width:47vw;gap:3vh}
+.profit .photo{left:6vw;top:26vh;width:32vw;height:29vh;border-radius:2vw;object-position:center 60%}
+.profit-outcome{top:58vh;min-height:0;height:19vh;padding:2vh 2.2vw;gap:1vh}
+.profit .equals{font-size:2.8vw}
+.profit .result{font-size:2.5vw;line-height:1.35}
+.profit .note{bottom:10vh}
+.security .photo{left:6vw;top:28vh;width:32vw;height:61vh;border-radius:2vw 2vw 8vw 2vw}
+.security ul{right:6vw;top:29vh;width:49vw;gap:2.5vh}

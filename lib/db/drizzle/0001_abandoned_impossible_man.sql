@@ -1,0 +1,2 @@
+ALTER TABLE "nasaem_local_credentials" ADD COLUMN "email" text NOT NULL;--> statement-breakpoint
+CREATE UNIQUE INDEX "nasaem_local_credentials_email_idx" ON "nasaem_local_credentials" USING btree ("email");

@@ -1,0 +1,28 @@
+kind = "slides"
+previewPath = "/nasaem-presentation/"
+title = "نسايم — عرض النظام"
+description = "عرض عربي من 12 شريحة يشرح فكرة نظام نسايم وخصائص البيع والمخزون والمسح والحسابات، إعداد Mohamed elsaed."
+version = "1.0.0"
+id = "artifacts/nasaem-presentation"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/nasaem-presentation/" ]
+localPort = 21779
+
+[services.development]
+run = "pnpm --filter @workspace/nasaem-presentation run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/nasaem-presentation", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/nasaem-presentation/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "21779"
+BASE_PATH = "/nasaem-presentation/"

@@ -1,0 +1,1 @@
+ALTER TABLE "nasaem_staff" ADD COLUMN "approval_pending" boolean;

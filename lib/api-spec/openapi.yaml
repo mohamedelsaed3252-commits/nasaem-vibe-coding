@@ -1,0 +1,960 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: Central inventory, purchasing, and sales API for Nasaem Detergents
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Current authenticated user and access role
+  - name: dashboard
+    description: Store summary and activity
+  - name: products
+    description: Product catalog and inventory levels
+  - name: sales
+    description: Store sales and invoices
+  - name: supplies
+    description: Stock purchases and incoming inventory
+  - name: finance
+    description: Monthly profit and operating expenses
+  - name: debts
+    description: Amounts owed to and by the store
+  - name: team
+    description: Staff and access roles
+  - name: backup
+    description: Store data backup and restore
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /auth/me:
+    get:
+      operationId: getCurrentUser
+      tags: [auth]
+      summary: Get the signed-in user's app profile
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUser"
+        "401":
+          description: Sign-in required
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/local/register:
+    post:
+      operationId: registerLocalAccount
+      tags: [auth]
+      summary: Create an account for local shop access
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalRegisterBody"
+      responses:
+        "201":
+          description: Account created; later accounts wait for owner approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalAuthResult"
+        "400":
+          description: Invalid registration details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "409":
+          description: An account with this email already exists
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/local/login:
+    post:
+      operationId: loginLocalAccount
+      tags: [auth]
+      summary: Sign in to the local shop system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocalLoginBody"
+      responses:
+        "200":
+          description: Signed in
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LocalAuthResult"
+        "401":
+          description: Invalid email or password
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "403":
+          description: Account is waiting for owner approval
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /auth/local/logout:
+    post:
+      operationId: logoutLocalAccount
+      tags: [auth]
+      summary: Sign out of the local shop system
+      responses:
+        "204":
+          description: Signed out
+  /dashboard:
+    get:
+      operationId: getDashboard
+      tags: [dashboard]
+      summary: Get store totals and stock alerts
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+  /activity:
+    get:
+      operationId: listRecentActivity
+      tags: [dashboard]
+      summary: Get recent store activity
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 10
+      responses:
+        "200":
+          description: Recent activity
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+  /products:
+    get:
+      operationId: listProducts
+      tags: [products]
+      summary: List products with optional search and stock filter
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: lowStock
+          in: query
+          schema:
+            type: boolean
+        - name: includeInactive
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Products
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Product"
+    post:
+      operationId: createProduct
+      tags: [products]
+      summary: Add a product
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductInput"
+      responses:
+        "201":
+          description: Product created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid product data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /products/{id}:
+    get:
+      operationId: getProduct
+      tags: [products]
+      summary: Get a product
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    patch:
+      operationId: updateProduct
+      tags: [products]
+      summary: Update product details
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductUpdate"
+      responses:
+        "200":
+          description: Product updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+    delete:
+      operationId: deleteProduct
+      tags: [products]
+      summary: Archive a product
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "204":
+          description: Product archived
+        "404":
+          description: Product not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /products/{id}/stock:
+    post:
+      operationId: adjustStock
+      tags: [products]
+      summary: Record a manual stock adjustment
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StockAdjustmentInput"
+      responses:
+        "200":
+          description: Updated product
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+        "400":
+          description: Invalid adjustment
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sales:
+    get:
+      operationId: listSales
+      tags: [sales]
+      summary: List recent sales
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Sales
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Sale"
+    post:
+      operationId: createSale
+      tags: [sales]
+      summary: Record a sale and deduct stock atomically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleInput"
+      responses:
+        "201":
+          description: Sale recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+        "400":
+          description: Invalid sale or insufficient stock
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sales/{id}/cancel:
+    post:
+      operationId: cancelSale
+      tags: [sales]
+      summary: Cancel a sale and restore its stock once (owner or manager)
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaleCancellationInput"
+      responses:
+        "200":
+          description: Sale cancelled, or already cancelled without another stock change
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Sale"
+        "404":
+          description: Sale not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /sales/{id}/invoice:
+    get:
+      operationId: getSaleInvoice
+      tags: [sales]
+      summary: Get printable invoice details for a sale
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      responses:
+        "200":
+          description: Invoice
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Invoice"
+        "404":
+          description: Sale not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /supplies:
+    get:
+      operationId: listSupplies
+      tags: [supplies]
+      summary: List recent stock supplies
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+      responses:
+        "200":
+          description: Supplies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Supply"
+    post:
+      operationId: createSupply
+      tags: [supplies]
+      summary: Record incoming stock and update inventory atomically
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SupplyInput"
+      responses:
+        "201":
+          description: Supply recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Supply"
+        "400":
+          description: Invalid supply
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /debts:
+    get:
+      operationId: listDebts
+      tags: [debts]
+      summary: List debts and their payment history
+      responses:
+        "200":
+          description: Debt accounts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Debt" }
+    post:
+      operationId: createDebt
+      tags: [debts]
+      summary: Record a customer or supplier debt
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DebtInput" }
+      responses:
+        "201":
+          description: Debt recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Debt" }
+        "400":
+          description: Invalid debt
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /debts/{id}/payments:
+    post:
+      operationId: createDebtPayment
+      tags: [debts]
+      summary: Record a full or partial debt payment
+      parameters:
+        - $ref: "#/components/parameters/Id"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/DebtPaymentInput" }
+      responses:
+        "200":
+          description: Updated debt account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Debt" }
+        "400":
+          description: Payment exceeds outstanding balance
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /expenses:
+    get:
+      operationId: listExpenses
+      tags: [finance]
+      summary: List operating expenses for a month
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema: { type: string, pattern: "^[0-9]{4}-[0-9]{2}$" }
+      responses:
+        "200":
+          description: Monthly operating expenses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Expense" }
+    post:
+      operationId: createExpense
+      tags: [finance]
+      summary: Record a store operating expense
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpenseInput" }
+      responses:
+        "201":
+          description: Expense recorded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Expense" }
+        "400":
+          description: Invalid expense
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /finance/monthly:
+    get:
+      operationId: getMonthlyFinance
+      tags: [finance]
+      summary: Calculate revenue, cost of goods sold and net profit
+      parameters:
+        - name: month
+          in: query
+          required: true
+          schema: { type: string, pattern: "^[0-9]{4}-[0-9]{2}$" }
+      responses:
+        "200":
+          description: Monthly profit summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MonthlyFinance" }
+  /team:
+    get:
+      operationId: listTeamMembers
+      tags: [team]
+      summary: List staff members
+      responses:
+        "200":
+          description: Team members
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AppUser"
+    patch:
+      operationId: updateTeamRole
+      tags: [team]
+      summary: Change a staff member's role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TeamRoleUpdate"
+      responses:
+        "200":
+          description: Updated member
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AppUser"
+        "404":
+          description: Member not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+  /backup:
+    get:
+      operationId: exportBackup
+      tags: [backup]
+      summary: Export all store records as a backup
+      responses:
+        "200":
+          description: Backup data
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Backup"
+    post:
+      operationId: restoreBackup
+      tags: [backup]
+      summary: Restore store records from a backup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Backup"
+      responses:
+        "200":
+          description: Restore completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RestoreResult"
+        "400":
+          description: Invalid backup
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+components:
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+      required: [error]
+    AppUser:
+      type: object
+      properties:
+        id: { type: string }
+        displayName: { type: string }
+        email: { type: string }
+        role: { type: string, enum: [owner, manager, cashier] }
+        active: { type: boolean }
+        pendingApproval: { type: boolean }
+        createdAt: { type: string, format: date-time }
+      required: [id, displayName, email, role, active, pendingApproval, createdAt]
+    LocalRegisterBody:
+      type: object
+      properties:
+        displayName: { type: string, minLength: 1, maxLength: 120 }
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 8, maxLength: 200 }
+      required: [displayName, email, password]
+    LocalLoginBody:
+      type: object
+      properties:
+        email: { type: string, format: email, maxLength: 254 }
+        password: { type: string, minLength: 1, maxLength: 200 }
+      required: [email, password]
+    LocalAuthResult:
+      type: object
+      properties:
+        pending: { type: boolean }
+      required: [pending]
+    DashboardSummary:
+      type: object
+      properties:
+        productCount: { type: integer }
+        lowStockCount: { type: integer }
+        todaySales: { type: number }
+        todaySaleCount: { type: integer }
+        estimatedProfit: { type: number }
+        recentSales:
+          type: array
+          items: { $ref: "#/components/schemas/Sale" }
+        lowStockProducts:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+      required: [productCount, lowStockCount, todaySales, todaySaleCount, estimatedProfit, recentSales, lowStockProducts]
+    ActivityItem:
+      type: object
+      properties:
+        id: { type: string }
+        kind: { type: string, enum: [sale, supply, adjustment] }
+        label: { type: string }
+        amount: { type: ["number", "null"] }
+        createdAt: { type: string, format: date-time }
+        actorName: { type: string }
+      required: [id, kind, label, amount, createdAt, actorName]
+    Product:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        sku: { type: ["string", "null"] }
+        category: { type: string }
+        unit: { type: string }
+        unitsPerCarton: { type: integer, minimum: 1 }
+        purchasePrice: { type: number }
+        sellingPrice: { type: number }
+        stock: { type: number }
+        lowStockThreshold: { type: number }
+        isActive: { type: boolean }
+        updatedAt: { type: string, format: date-time }
+      required: [id, name, sku, category, unit, purchasePrice, sellingPrice, stock, lowStockThreshold, isActive, updatedAt]
+    ProductInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        sku: { type: ["string", "null"] }
+        category: { type: string }
+        unit: { type: string }
+        unitsPerCarton: { type: integer, minimum: 1 }
+        purchasePrice: { type: number, minimum: 0 }
+        sellingPrice: { type: number, minimum: 0 }
+        stock: { type: number, minimum: 0 }
+        lowStockThreshold: { type: number, minimum: 0 }
+      required: [name, category, unit, purchasePrice, sellingPrice, stock, lowStockThreshold]
+    ProductUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1 }
+        sku: { type: ["string", "null"] }
+        category: { type: string }
+        unit: { type: string }
+        unitsPerCarton: { type: integer, minimum: 1 }
+        purchasePrice: { type: number, minimum: 0 }
+        sellingPrice: { type: number, minimum: 0 }
+        lowStockThreshold: { type: number, minimum: 0 }
+        isActive: { type: boolean }
+    StockAdjustmentInput:
+      type: object
+      properties:
+        delta: { type: number }
+        reason: { type: string, minLength: 1 }
+      required: [delta, reason]
+    SaleCancellationInput:
+      type: object
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
+      required: [reason]
+    SaleLineInput:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        quantity: { type: number, exclusiveMinimum: 0 }
+      required: [productId, quantity]
+    SaleInput:
+      type: object
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/SaleLineInput" }
+        discount: { type: number, minimum: 0 }
+        notes: { type: ["string", "null"] }
+      required: [items, discount]
+    SaleLine:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        productName: { type: string }
+        quantity: { type: number }
+        unitPrice: { type: number }
+        unitCost: { type: number }
+        lineTotal: { type: number }
+      required: [productId, productName, quantity, unitPrice, unitCost, lineTotal]
+    Sale:
+      type: object
+      properties:
+        cancelledAt: { type: ["string", "null"], format: date-time }
+        cancelledBy: { type: ["string", "null"] }
+        cancellationReason: { type: ["string", "null"] }
+        id: { type: string, format: uuid }
+        invoiceNumber: { type: string }
+        subtotal: { type: number }
+        discount: { type: number }
+        total: { type: number }
+        estimatedProfit: { type: number }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        actorName: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SaleLine" }
+      required: [id, invoiceNumber, subtotal, discount, total, estimatedProfit, notes, createdAt, actorName, items]
+    Invoice:
+      allOf:
+        - $ref: "#/components/schemas/Sale"
+        - type: object
+          properties:
+            storeName: { type: string }
+          required: [storeName]
+    SupplyLineInput:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        quantity: { type: number, exclusiveMinimum: 0 }
+        unitCost: { type: number, minimum: 0 }
+      required: [productId, quantity, unitCost]
+    SupplyInput:
+      type: object
+      properties:
+        supplierName: { type: string }
+        reference: { type: ["string", "null"] }
+        items:
+          type: array
+          minItems: 1
+          items: { $ref: "#/components/schemas/SupplyLineInput" }
+        notes: { type: ["string", "null"] }
+        amountPaid: { type: number, minimum: 0 }
+      required: [supplierName, items]
+    SupplyLine:
+      type: object
+      properties:
+        productId: { type: string, format: uuid }
+        productName: { type: string }
+        quantity: { type: number }
+        unitCost: { type: number }
+        lineTotal: { type: number }
+      required: [productId, productName, quantity, unitCost, lineTotal]
+    Supply:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        supplierName: { type: string }
+        reference: { type: ["string", "null"] }
+        total: { type: number }
+        amountPaid: { type: ["number", "null"] }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        actorName: { type: string }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/SupplyLine" }
+      required: [id, supplierName, reference, total, notes, createdAt, actorName, items]
+    DebtPayment:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        amount: { type: number }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        actorName: { type: string }
+      required: [id, amount, notes, createdAt, actorName]
+    Debt:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        direction: { type: string, enum: [receivable, payable] }
+        partyType: { type: string, enum: [customer, supplier] }
+        partyName: { type: string }
+        amount: { type: number }
+        paidAmount: { type: number }
+        remaining: { type: number }
+        notes: { type: ["string", "null"] }
+        supplyId: { type: ["string", "null"], format: uuid }
+        createdAt: { type: string, format: date-time }
+        actorName: { type: string }
+        payments:
+          type: array
+          items: { $ref: "#/components/schemas/DebtPayment" }
+      required: [id, direction, partyType, partyName, amount, paidAmount, remaining, notes, supplyId, createdAt, actorName, payments]
+    DebtInput:
+      type: object
+      properties:
+        direction: { type: string, enum: [receivable, payable] }
+        partyType: { type: string, enum: [customer, supplier] }
+        partyName: { type: string, minLength: 1, maxLength: 160 }
+        amount: { type: number, exclusiveMinimum: 0 }
+        paidAmount: { type: number, minimum: 0 }
+        notes: { type: ["string", "null"] }
+      required: [direction, partyType, partyName, amount]
+    DebtPaymentInput:
+      type: object
+      properties:
+        amount: { type: number, exclusiveMinimum: 0 }
+        notes: { type: ["string", "null"] }
+      required: [amount]
+    Expense:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        category: { type: string, enum: [electricity, water, rent, salaries, other] }
+        amount: { type: number }
+        expenseDate: { type: string, format: date }
+        notes: { type: ["string", "null"] }
+        createdAt: { type: string, format: date-time }
+        actorName: { type: string }
+      required: [id, category, amount, expenseDate, notes, createdAt, actorName]
+    ExpenseInput:
+      type: object
+      properties:
+        category: { type: string, enum: [electricity, water, rent, salaries, other] }
+        amount: { type: number, exclusiveMinimum: 0 }
+        expenseDate: { type: string, format: date }
+        notes: { type: ["string", "null"] }
+      required: [category, amount, expenseDate]
+    ExpenseBreakdown:
+      type: object
+      properties:
+        category: { type: string }
+        total: { type: number }
+      required: [category, total]
+    MonthlyFinance:
+      type: object
+      properties:
+        month: { type: string }
+        salesRevenue: { type: number }
+        costOfGoodsSold: { type: number }
+        grossProfit: { type: number }
+        expensesTotal: { type: number }
+        netProfit: { type: number }
+        expenseBreakdown:
+          type: array
+          items: { $ref: "#/components/schemas/ExpenseBreakdown" }
+      required: [month, salesRevenue, costOfGoodsSold, grossProfit, expensesTotal, netProfit, expenseBreakdown]
+    TeamRoleUpdate:
+      type: object
+      properties:
+        userId: { type: string }
+        role: { type: string, enum: [owner, manager, cashier] }
+        active: { type: boolean }
+      required: [userId, role]
+    Backup:
+      type: object
+      properties:
+        version: { type: integer, const: 1 }
+        exportedAt: { type: string, format: date-time }
+        products:
+          type: array
+          items: { $ref: "#/components/schemas/Product" }
+        sales:
+          type: array
+          items: { $ref: "#/components/schemas/Sale" }
+        supplies:
+          type: array
+          items: { $ref: "#/components/schemas/Supply" }
+        debts:
+          type: array
+          items: { $ref: "#/components/schemas/Debt" }
+        expenses:
+          type: array
+          items: { $ref: "#/components/schemas/Expense" }
+      required: [version, exportedAt, products, sales, supplies]
+    RestoreResult:
+      type: object
+      properties:
+        productsRestored: { type: integer }
+        salesRestored: { type: integer }
+        suppliesRestored: { type: integer }
+      required: [productsRestored, salesRestored, suppliesRestored]
+
