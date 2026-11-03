@@ -19,20 +19,20 @@ generated-artifacts/delivery/
     Nasaem-Presentation-Mohamed-El_saed.pptx
 ```
 
-## كود المصدر وملفات الإصدار
+## تنزيل ملفات الإصدار
 
-[إصدار كود المصدر](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
+[صفحة الإصدار بكل الملفات](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
 
 المستودع خاص؛ يلزم الدخول بالحساب المالك أو حساب لديه صلاحية.
 
-**الكود ومصدر العرض موجودان في المستودع. ملفات PDF وPowerPoint الجاهزة أُنتجت وأُرفقت في محادثة التسليم، لكن إرفاقها تلقائيًا بإصدار GitHub لم يكتمل. لا توجد روابط تنزيل لمرفقات إصدار لم تُرفع.**
+الكود ومصدر العرض موجودان في المستودع، والنسخ الجاهزة مرفقة بالإصدار:
 
-يمكن لصاحب المستودع تنزيل الملفات المرفقة ثم فتح صفحة الإصدار واختيار تعديل الإصدار وإضافة الملفات التالية:
-
-- `Nasaem-Presentation-Mohamed-El_saed.pdf`
-- `Nasaem-Project-Idea-Mohamed-El_saed.pdf`
-- `Nasaem-Presentation-Mohamed-El_saed.pptx`
-- `Nasaem-Project-Mohamed-El_saed.zip`، وهي الحزمة المتاحة في مجلد `generated-artifacts/` داخل مساحة العمل.
+| الملف | التحميل |
+| --- | --- |
+| العرض التقديمي PDF | [تنزيل PDF](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Presentation-Mohamed-El_saed.pdf) |
+| العرض بالحركات PowerPoint | [تنزيل PowerPoint](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Presentation-Mohamed-El_saed.pptx) |
+| فكرة المشروع PDF | [تنزيل فكرة المشروع](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Project-Idea-Mohamed-El_saed.pdf) |
+| الكود والوثائق وPDF وPowerPoint معًا | [تنزيل الحزمة الكاملة ZIP](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Project-Mohamed-El_saed.zip) |
 
 ملفات PDF وPowerPoint الجاهزة ليست ضمن تاريخ Git؛ مصدر العرض نفسه، بما فيه الصور والخطوط، محفوظ مع الكود.
 

@@ -1,0 +1,56 @@
+name: Attach verified project deliverables
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nasaem-release-delivery
+  cancel-in-progress: false
+
+jobs:
+  deliver:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Download reviewed files and verify their hashes
+        env:
+          DELIVERY_MANIFEST: ${{ secrets.NASAEM_DELIVERY_MANIFEST }}
+        shell: python
+        run: |
+          import hashlib, json, os, pathlib, sys, urllib.parse, urllib.request
+          files = json.loads(os.environ["DELIVERY_MANIFEST"])
+          expected = {
+              "Nasaem-Presentation-Mohamed-El_saed.pdf",
+              "Nasaem-Project-Idea-Mohamed-El_saed.pdf",
+              "Nasaem-Presentation-Mohamed-El_saed.pptx",
+              "Nasaem-Project-Mohamed-El_saed.zip",
+          }
+          assert len(files) == 4 and {f["name"] for f in files} == expected
+          output = pathlib.Path("delivery")
+          output.mkdir()
+          for item in files:
+              url = urllib.parse.urlparse(item["url"])
+              assert url.scheme == "https" and url.hostname == "storage.googleapis.com"
+              try:
+                  with urllib.request.urlopen(item["url"], timeout=120) as response:
+                      data = response.read(60 * 1024 * 1024)
+              except Exception as error:
+                  print("Download failed:", item["name"], type(error).__name__)
+                  sys.exit(1)
+              assert len(data) == item["bytes"], "Unexpected file size"
+              assert hashlib.sha256(data).hexdigest() == item["sha256"], "Hash mismatch"
+              (output / item["name"]).write_bytes(data)
+              print("Verified:", item["name"], len(data), "bytes")
+      - name: Upload to the existing GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          gh release upload v1.0.0 delivery/* --clobber
+          gh release view v1.0.0 --json assets \
+            --jq '.assets[] | {name, size}'

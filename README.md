@@ -14,7 +14,7 @@
 
 ## محتويات التسليم
 
-[مستودع GitHub](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding) · [إصدار كود المصدر](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
+[مستودع GitHub](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding) · [تحميل المشروع والملفات](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
 
 المستودع خاص للحفاظ على خصوصية المشروع؛ يلزم الدخول بحساب لديه صلاحية لعرضه.
 
@@ -26,6 +26,7 @@
 | مصدر العرض التقديمي والصور والخطوط | [artifacts/nasaem-presentation](artifacts/nasaem-presentation) |
 | دليل ملفات PDF وPowerPoint | [presentations/README.md](presentations/README.md) |
 | دليل الوضع المحلي الاختياري | [README_LOCAL_AR.md](README_LOCAL_AR.md) |
+| حزمة المشروع كاملة بالكود وPDF وPowerPoint | [تنزيل الحزمة الكاملة ZIP](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Project-Mohamed-El_saed.zip) |
 
 ## ماذا يقدم النظام؟
 
