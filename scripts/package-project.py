@@ -20,6 +20,7 @@ ROOT_FILES = {
 SOURCE_ROOTS = (
     "artifacts/api-server/", "artifacts/nasaem-inventory/",
     "artifacts/nasaem-presentation/", "lib/", "scripts/", "docs/", "presentations/",
+    ".github/workflows/",
 )
 BLOCKED = {
     "node_modules", "dist", ".git", ".local", ".agents", "nasaem-data",
@@ -78,8 +79,16 @@ def build():
     names = sorted({name for name in tracked_and_new if name and allowed(name)})
     content = {name: export_bytes(name) for name in names}
     if SOURCE.exists():
-        shutil.rmtree(SOURCE)
-    SOURCE.mkdir(parents=True)
+        # Preserve an isolated export repository on repeated packaging.
+        # Workspace Git history is never copied into this directory.
+        for child in SOURCE.iterdir():
+            if child.name == ".git":
+                continue
+            if child.is_dir() and not child.is_symlink():
+                shutil.rmtree(child)
+            else:
+                child.unlink()
+    SOURCE.mkdir(parents=True, exist_ok=True)
     manifest = []
     with zipfile.ZipFile(ARCHIVE, "w", zipfile.ZIP_DEFLATED) as archive:
         for name, data in content.items():
