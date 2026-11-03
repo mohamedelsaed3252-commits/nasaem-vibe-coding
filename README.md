@@ -14,7 +14,7 @@
 
 ## محتويات التسليم
 
-[مستودع GitHub](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding) · [ملفات الإصدار والتحميل](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
+[مستودع GitHub](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding) · [إصدار كود المصدر](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
 
 المستودع خاص للحفاظ على خصوصية المشروع؛ يلزم الدخول بحساب لديه صلاحية لعرضه.
 
@@ -142,7 +142,7 @@ pnpm --filter @workspace/api-server build
 
 ## حماية الملفات
 
-حزمة المصدر لا تتضمن الأسرار، أو قاعدة بيانات المحل، أو النسخ الاحتياطية، أو سجل Git القديم، أو المرفقات الشخصية. ملفات PDF وPowerPoint المولّدة محفوظة منفصلة عن تاريخ الكود لتقليل حجمه، وتُرفق بملفات الإصدار عند رفع المشروع إلى GitHub.
+حزمة المصدر لا تتضمن الأسرار، أو قاعدة بيانات المحل، أو النسخ الاحتياطية، أو سجل Git القديم، أو المرفقات الشخصية. ملفات PDF وPowerPoint المولّدة محفوظة منفصلة عن تاريخ الكود لتقليل حجمه. إرفاق النسخ الجاهزة بالإصدار عملية منفصلة عن رفع المصدر؛ راجع دليل العرض لمعرفة حالة ملفات التسليم.
 
 ## الإعداد والإشراف
 

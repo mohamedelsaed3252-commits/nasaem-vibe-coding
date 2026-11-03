@@ -19,20 +19,22 @@ generated-artifacts/delivery/
     Nasaem-Presentation-Mohamed-El_saed.pptx
 ```
 
-## تنزيل ملفات الإصدار
+## كود المصدر وملفات الإصدار
+
+[إصدار كود المصدر](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
 
 المستودع خاص؛ يلزم الدخول بالحساب المالك أو حساب لديه صلاحية.
 
-| الملف | التحميل |
-| --- | --- |
-| العرض التقديمي PDF | [تنزيل PDF](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Presentation-Mohamed-El_saed.pdf) |
-| العرض بالحركات PowerPoint | [تنزيل PowerPoint](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Presentation-Mohamed-El_saed.pptx) |
-| فكرة المشروع PDF | [تنزيل فكرة المشروع](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Project-Idea-Mohamed-El_saed.pdf) |
-| حزمة المشروع والملفات | [تنزيل الحزمة الكاملة](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/download/v1.0.0/Nasaem-Project-Mohamed-El_saed.zip) |
+**الكود ومصدر العرض موجودان في المستودع. ملفات PDF وPowerPoint الجاهزة أُنتجت وأُرفقت في محادثة التسليم، لكن إرفاقها تلقائيًا بإصدار GitHub لم يكتمل. لا توجد روابط تنزيل لمرفقات إصدار لم تُرفع.**
 
-[صفحة الإصدار](https://github.com/mohamedelsaed3252-commits/nasaem-vibe-coding/releases/tag/v1.0.0)
+يمكن لصاحب المستودع تنزيل الملفات المرفقة ثم فتح صفحة الإصدار واختيار تعديل الإصدار وإضافة الملفات التالية:
 
-ملفات PDF وPowerPoint الجاهزة مرفقة بالإصدار وليست ضمن تاريخ Git؛ مصدر العرض نفسه محفوظ مع الكود. عند استخدام سكربت التجهيز في نسخة جديدة، لا تُعدّ الروابط محدثة إلا بعد رفع الملفات إلى الإصدار المشار إليه.
+- `Nasaem-Presentation-Mohamed-El_saed.pdf`
+- `Nasaem-Project-Idea-Mohamed-El_saed.pdf`
+- `Nasaem-Presentation-Mohamed-El_saed.pptx`
+- `Nasaem-Project-Mohamed-El_saed.zip`، وهي الحزمة المتاحة في مجلد `generated-artifacts/` داخل مساحة العمل.
+
+ملفات PDF وPowerPoint الجاهزة ليست ضمن تاريخ Git؛ مصدر العرض نفسه، بما فيه الصور والخطوط، محفوظ مع الكود.
 
 داخل أرشيف التسليم المضغوط، توجد الملفات الجاهزة مباشرة في `presentations/pdf/` و`presentations/powerpoint/` إلى جانب المصدر والوثائق.
 
