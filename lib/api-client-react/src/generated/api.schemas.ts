@@ -20,6 +20,8 @@ export const AppUserRole = {
   owner: 'owner',
   manager: 'manager',
   cashier: 'cashier',
+  warehouse: 'warehouse',
+  purchasing: 'purchasing',
 } as const;
 
 export interface AppUser {
@@ -387,6 +389,20 @@ export interface MonthlyFinance {
   expenseBreakdown: ExpenseBreakdown[];
 }
 
+export interface YearlyFinance {
+  year: number;
+  salesRevenue: number;
+  costOfGoodsSold: number;
+  grossProfit: number;
+  expensesTotal: number;
+  netProfit: number;
+  /**
+     * @minItems 12
+     * @maxItems 12
+     */
+  months: MonthlyFinance[];
+}
+
 export type TeamRoleUpdateRole = typeof TeamRoleUpdateRole[keyof typeof TeamRoleUpdateRole];
 
 
@@ -394,6 +410,8 @@ export const TeamRoleUpdateRole = {
   owner: 'owner',
   manager: 'manager',
   cashier: 'cashier',
+  warehouse: 'warehouse',
+  purchasing: 'purchasing',
 } as const;
 
 export interface TeamRoleUpdate {
@@ -453,6 +471,14 @@ export type ListExpensesParams = {
  * @pattern ^[0-9]{4}-[0-9]{2}$
  */
 month: string;
+};
+
+export type GetYearlyFinanceParams = {
+/**
+ * @minimum 2000
+ * @maximum 2200
+ */
+year: number;
 };
 
 export type GetMonthlyFinanceParams = {

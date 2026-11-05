@@ -8,6 +8,12 @@ import {
   CreateDebtResponse,
   CreateExpenseBody,
   CreateExpenseResponse,
+  UpdateExpenseBody,
+  UpdateExpenseParams,
+  UpdateExpenseResponse,
+  DeleteExpenseParams,
+  GetYearlyFinanceQueryParams,
+  GetYearlyFinanceResponse,
   GetMonthlyFinanceQueryParams,
   GetMonthlyFinanceResponse,
   ListDebtsResponse,
@@ -24,14 +30,20 @@ import {
   staffTable,
   suppliesTable,
 } from "@workspace/db";
-import { requireAppRole } from "../middlewares/appAuth";
+import { operationalRoles, requireAppRole } from "../middlewares/appAuth";
+import { yearlyFinance } from "../lib/yearly-finance";
 
 const router: IRouter = Router();
 const requireManager = (
   req: Parameters<typeof requireAppRole>[1],
   res: Parameters<typeof requireAppRole>[2],
   next: Parameters<typeof requireAppRole>[3],
-) => requireAppRole(["owner", "manager"], req, res, next);
+) => requireAppRole(operationalRoles, req, res, next);
+const requireOwner = (
+  req: Parameters<typeof requireAppRole>[1],
+  res: Parameters<typeof requireAppRole>[2],
+  next: Parameters<typeof requireAppRole>[3],
+) => requireAppRole(["owner"], req, res, next);
 
 function validMonth(value: string) {
   const [year, month] = value.split("-").map(Number);
@@ -177,7 +189,7 @@ router.get("/expenses", async (req, res): Promise<void> => {
   res.json(ListExpensesResponse.parse(rows));
 });
 
-router.post("/expenses", requireManager, async (req, res): Promise<void> => {
+router.post("/expenses", requireOwner, async (req, res): Promise<void> => {
   const parsed = CreateExpenseBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -200,6 +212,40 @@ router.post("/expenses", requireManager, async (req, res): Promise<void> => {
     actorName: actor.displayName,
   }).returning();
   res.status(201).json(CreateExpenseResponse.parse(expense));
+});
+
+router.patch("/expenses/:id", requireOwner, async (req, res): Promise<void> => {
+  const params = UpdateExpenseParams.safeParse(req.params);
+  const parsed = UpdateExpenseBody.safeParse(req.body);
+  if (!params.success || !parsed.success) {
+    res.status(400).json({ error: "بيانات المصروف غير صالحة" }); return;
+  }
+  const expenseDate = typeof req.body.expenseDate === "string"
+    ? req.body.expenseDate : parsed.data.expenseDate.toISOString().slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expenseDate)) {
+    res.status(400).json({ error: "تاريخ المصروف غير صالح" }); return;
+  }
+  const [expense] = await db.update(operatingExpensesTable).set({
+    category: parsed.data.category, amount: Number(parsed.data.amount.toFixed(2)),
+    expenseDate, notes: parsed.data.notes?.trim() || null,
+  }).where(eq(operatingExpensesTable.id, params.data.id)).returning();
+  if (!expense) { res.status(404).json({ error: "المصروف غير موجود" }); return; }
+  res.json(UpdateExpenseResponse.parse(expense));
+});
+
+router.delete("/expenses/:id", requireOwner, async (req, res): Promise<void> => {
+  const params = DeleteExpenseParams.safeParse(req.params);
+  if (!params.success) { res.status(400).json({ error: "المصروف غير صالح" }); return; }
+  const [deleted] = await db.delete(operatingExpensesTable)
+    .where(eq(operatingExpensesTable.id, params.data.id)).returning({ id: operatingExpensesTable.id });
+  if (!deleted) { res.status(404).json({ error: "المصروف غير موجود" }); return; }
+  res.sendStatus(204);
+});
+
+router.get("/finance/yearly", async (req, res): Promise<void> => {
+  const parsed = GetYearlyFinanceQueryParams.safeParse(req.query);
+  if (!parsed.success) { res.status(400).json({ error: "السنة المحددة غير صالحة" }); return; }
+  res.json(GetYearlyFinanceResponse.parse(await yearlyFinance(parsed.data.year)));
 });
 
 router.get("/finance/monthly", async (req, res): Promise<void> => {

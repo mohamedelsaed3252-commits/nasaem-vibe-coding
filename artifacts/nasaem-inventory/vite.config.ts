@@ -20,6 +20,7 @@ if (Number.isNaN(port) || port <= 0) {
 }
 
 const basePath = process.env.BASE_PATH;
+const buildVersion = `${Date.now()}`;
 
 if (!basePath) {
   throw new Error(
@@ -30,6 +31,16 @@ if (!basePath) {
 export default defineConfig({
   base: basePath,
   plugins: [
+    {
+      name: 'nasaem-build-version',
+      apply: 'build',
+      transformIndexHtml() {
+        return [{ tag: 'meta', attrs: { name: 'nasaem-build', content: buildVersion }, injectTo: 'head' }];
+      },
+      generateBundle() {
+        this.emitFile({ type: 'asset', fileName: 'app-version.json', source: JSON.stringify({ version: buildVersion }) });
+      },
+    },
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),

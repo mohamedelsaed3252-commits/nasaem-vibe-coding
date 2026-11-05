@@ -20,7 +20,7 @@ import {
   staffTable,
   stockAdjustmentsTable,
 } from "@workspace/db";
-import { requireAppRole } from "../middlewares/appAuth";
+import { operationalRoles, requireAppRole } from "../middlewares/appAuth";
 
 const router: IRouter = Router();
 
@@ -164,7 +164,7 @@ router.post("/sales", async (req, res): Promise<void> => {
 });
 
 router.post("/sales/:id/cancel", (req, res, next) =>
-  requireAppRole(["owner", "manager"], req, res, next),
+  requireAppRole(operationalRoles, req, res, next),
 async (req, res): Promise<void> => {
   const params = CancelSaleParams.safeParse(req.params);
   const body = CancelSaleBody.safeParse(req.body);

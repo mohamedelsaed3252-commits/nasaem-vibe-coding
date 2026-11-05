@@ -13,4 +13,6 @@ export const TeamRoleUpdateRole = {
   owner: 'owner',
   manager: 'manager',
   cashier: 'cashier',
+  warehouse: 'warehouse',
+  purchasing: 'purchasing',
 } as const;

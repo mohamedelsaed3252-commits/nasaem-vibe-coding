@@ -38,7 +38,8 @@
 - The local launcher builds a single-origin LAN app. Its camera scanner captures a barcode image for decoding because browser live-camera streaming requires HTTPS on mobile LAN addresses.
 - The shop computer must stay on for other devices to use the local system. Keep `nasaem-data/` and do not forward its port from the router to the public internet.
 - Product deletion archives the product so invoice history remains intact.
-- Sale deletion is an audited cancellation, limited to owners/managers, with a required reason. Restore stock exactly once inside the sale-lock transaction and exclude cancelled sales from financial totals; keep historical line prices and invoices. This prevents accidental data loss or double returns.
+- Sale deletion is an audited cancellation for operational roles (owner, operations manager, warehouse, purchasing), with a required reason. Restore stock exactly once inside the sale-lock transaction and exclude cancelled sales from monthly/yearly financial totals; keep historical line prices and invoices. This prevents accidental data loss or double returns.
+- Only owners administer staff and create/update/delete operating expenses. Warehouse and purchasing staff manage products, stock, supplies, sales, debts and payments; cashiers record sales without management writes. Monthly/yearly profit is calculated, never manually overwritten.
 - Sales and supplies update stock in database transactions; backup restore merges records and does not delete records absent from the backup.
 
 ## Product

@@ -1,4 +1,4 @@
-modules = ["nodejs-24", "python-base-3.13"]
+modules = ["nodejs-24", "python-base-3.13", "postgresql-16"]
 
 [deployment]
 router = "application"
@@ -6,7 +6,6 @@ deploymentTarget = "autoscale"
 
 [deployment.postBuild]
 args = ["pnpm", "store", "prune"]
-env = { "CI" = "true" }
 
 [workflows]
 runButton = "Project"
@@ -34,3 +33,6 @@ externalPort = 80
 [[ports]]
 localPort = 22615
 externalPort = 3000
+
+[nix]
+channel = "stable-25_05"

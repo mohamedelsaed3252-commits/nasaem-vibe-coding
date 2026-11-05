@@ -24,7 +24,7 @@ export const GetCurrentUserResponse = zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
   "email": zod.string(),
-  "role": zod.enum(['owner', 'manager', 'cashier']),
+  "role": zod.enum(['owner', 'manager', 'cashier', 'warehouse', 'purchasing']),
   "active": zod.boolean(),
   "pendingApproval": zod.boolean(),
   "createdAt": zod.coerce.date()
@@ -729,6 +729,84 @@ export const CreateExpenseResponse = zod.object({
 
 
 /**
+ * @summary Owner-only correction of an operating expense
+ */
+export const UpdateExpenseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const updateExpenseBodyAmountExclusiveMin = 0;
+
+
+
+export const UpdateExpenseBody = zod.object({
+  "category": zod.enum(['electricity', 'water', 'rent', 'salaries', 'other']),
+  "amount": zod.number().gt(updateExpenseBodyAmountExclusiveMin),
+  "expenseDate": zod.coerce.date(),
+  "notes": zod.string().nullish()
+})
+
+export const UpdateExpenseResponse = zod.object({
+  "id": zod.string().uuid(),
+  "category": zod.enum(['electricity', 'water', 'rent', 'salaries', 'other']),
+  "amount": zod.number(),
+  "expenseDate": zod.coerce.date(),
+  "notes": zod.string().nullable(),
+  "createdAt": zod.coerce.date(),
+  "actorName": zod.string()
+})
+
+
+/**
+ * @summary Owner-only deletion of an incorrect operating expense
+ */
+export const DeleteExpenseParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DeleteExpenseResponse = zod.void()
+
+
+/**
+ * @summary Calculate annual profit with a twelve-month breakdown
+ */
+export const getYearlyFinanceQueryYearMin = 2000;
+export const getYearlyFinanceQueryYearMax = 2200;
+
+
+
+export const GetYearlyFinanceQueryParams = zod.object({
+  "year": zod.coerce.number().int().min(getYearlyFinanceQueryYearMin).max(getYearlyFinanceQueryYearMax)
+})
+
+export const getYearlyFinanceResponseMonthsMin = 12;
+export const getYearlyFinanceResponseMonthsMax = 12;
+
+
+
+export const GetYearlyFinanceResponse = zod.object({
+  "year": zod.number().int(),
+  "salesRevenue": zod.number(),
+  "costOfGoodsSold": zod.number(),
+  "grossProfit": zod.number(),
+  "expensesTotal": zod.number(),
+  "netProfit": zod.number(),
+  "months": zod.array(zod.object({
+  "month": zod.string(),
+  "salesRevenue": zod.number(),
+  "costOfGoodsSold": zod.number(),
+  "grossProfit": zod.number(),
+  "expensesTotal": zod.number(),
+  "netProfit": zod.number(),
+  "expenseBreakdown": zod.array(zod.object({
+  "category": zod.string(),
+  "total": zod.number()
+}))
+})).min(getYearlyFinanceResponseMonthsMin).max(getYearlyFinanceResponseMonthsMax)
+})
+
+
+/**
  * @summary Calculate revenue, cost of goods sold and net profit
  */
 export const getMonthlyFinanceQueryMonthRegExp = new RegExp('^[0-9]{4}-[0-9]{2}$');
@@ -759,7 +837,7 @@ export const ListTeamMembersResponseItem = zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
   "email": zod.string(),
-  "role": zod.enum(['owner', 'manager', 'cashier']),
+  "role": zod.enum(['owner', 'manager', 'cashier', 'warehouse', 'purchasing']),
   "active": zod.boolean(),
   "pendingApproval": zod.boolean(),
   "createdAt": zod.coerce.date()
@@ -772,7 +850,7 @@ export const ListTeamMembersResponse = zod.array(ListTeamMembersResponseItem)
  */
 export const UpdateTeamRoleBody = zod.object({
   "userId": zod.string(),
-  "role": zod.enum(['owner', 'manager', 'cashier']),
+  "role": zod.enum(['owner', 'manager', 'cashier', 'warehouse', 'purchasing']),
   "active": zod.boolean().optional()
 })
 
@@ -780,7 +858,7 @@ export const UpdateTeamRoleResponse = zod.object({
   "id": zod.string(),
   "displayName": zod.string(),
   "email": zod.string(),
-  "role": zod.enum(['owner', 'manager', 'cashier']),
+  "role": zod.enum(['owner', 'manager', 'cashier', 'warehouse', 'purchasing']),
   "active": zod.boolean(),
   "pendingApproval": zod.boolean(),
   "createdAt": zod.coerce.date()

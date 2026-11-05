@@ -100,6 +100,11 @@ try {
   assert.equal(monthly.grossProfit, 15);
   assert.equal(monthly.expensesTotal, 5);
   assert.equal(monthly.netProfit, 10);
+  const annualAtSale = (await request(`/finance/yearly?year=${part("year")}`, { cookie })).body;
+  assert.equal(annualAtSale.salesRevenue, 45);
+  assert.equal(annualAtSale.costOfGoodsSold, 30);
+  assert.equal(annualAtSale.expensesTotal, 5);
+  assert.equal(annualAtSale.netProfit, 10);
   const { body: receivable } = await request("/debts", {
     method: "POST", status: 201, cookie,
     data: { direction: "receivable", partyType: "customer", partyName: "Regression customer", amount: 50, paidAmount: 5 },
@@ -147,7 +152,56 @@ try {
   const cashier = await request("/auth/local/login", { method: "POST", data: { email: "cashier@regression.test", password } });
   await request(`/sales/${sale.id}/cancel`, { method: "POST", cookie: cashier.cookie, status: 403, data: { reason: "Not permitted" } });
   await request(`/products/${product.id}`, { method: "DELETE", cookie: cashier.cookie, status: 403 });
-  console.log("PASS: product carton conversion, paid supplier supplies, partial debt payments, monthly profit and expense math, editing, archive/restore, historical invoices, cancellation, backup roundtrip, cashier permissions.");
+  const expenseInput = { category: "water", amount: 7, expenseDate: "2024-01-01", notes: "Annual regression" };
+  const trackedExpense = (await request("/expenses", { method: "POST", cookie, status: 201, data: expenseInput })).body;
+  await request("/expenses", { method: "POST", cookie, status: 201, data: { ...expenseInput, amount: 13, expenseDate: "2024-12-31" } });
+  await request("/expenses", { method: "POST", cookie, status: 201, data: { ...expenseInput, amount: 99, expenseDate: "2025-01-01" } });
+  let annual = (await request("/finance/yearly?year=2024", { cookie })).body;
+  assert.equal(annual.months.length, 12);
+  assert.equal(annual.expensesTotal, 20);
+  assert.equal(annual.netProfit, -20);
+  assert.equal(annual.months[0].expensesTotal, 7);
+  assert.equal(annual.months[11].expensesTotal, 13);
+  assert.equal(annual.months[5].netProfit, 0);
+  await request("/finance/yearly?year=2201", { cookie, status: 400 });
+  await request("/finance/yearly?year=abc", { cookie, status: 400 });
+  for (const role of ["warehouse", "purchasing", "manager"]) {
+    const email = `${role}@regression.test`;
+    await request("/auth/local/register", { method: "POST", status: 201, data: { displayName: `Regression ${role}`, email, password } });
+    const member = (await request("/team", { cookie })).body.find(row => row.email === email);
+    await request("/team", { method: "PATCH", cookie, data: { userId: member.id, role, active: true } });
+    const workerCookie = (await request("/auth/local/login", { method: "POST", data: { email, password } })).cookie;
+    const input = { name: `Item ${role}`, sku: `ROLE-${role}`, category: "Test", unit: "عبوة", unitsPerCarton: 6, stock: 10, purchasePrice: 10, sellingPrice: 15, lowStockThreshold: 2 };
+    const created = (await request("/products", { method: "POST", cookie: workerCookie, status: 201, data: input })).body;
+    await request(`/products/${created.id}`, { method: "PATCH", cookie: workerCookie, data: { ...input, name: `Updated ${role}` } });
+    await request(`/products/${created.id}/stock`, { method: "POST", cookie: workerCookie, data: { delta: 2, reason: "Role regression" } });
+    await request("/supplies", { method: "POST", cookie: workerCookie, status: 201, data: { supplierName: `Supplier ${role}`, amountPaid: 10, items: [{ productId: created.id, quantity: 1, unitCost: 10 }] } });
+    const createdDebt = (await request("/debts", { method: "POST", cookie: workerCookie, status: 201, data: { direction: "receivable", partyType: "customer", partyName: `Customer ${role}`, amount: 5 } })).body;
+    await request(`/debts/${createdDebt.id}/payments`, { method: "POST", cookie: workerCookie, data: { amount: 2 } });
+    const sold = (await request("/sales", { method: "POST", cookie: workerCookie, status: 201, data: { items: [{ productId: created.id, quantity: 1 }], discount: 0 } })).body;
+    await request(`/sales/${sold.id}/cancel`, { method: "POST", cookie: workerCookie, data: { reason: "Role regression cancellation" } });
+    await request("/expenses", { method: "POST", cookie: workerCookie, status: 403, data: expenseInput });
+    await request(`/expenses/${trackedExpense.id}`, { method: "PATCH", cookie: workerCookie, status: 403, data: expenseInput });
+    await request(`/expenses/${trackedExpense.id}`, { method: "DELETE", cookie: workerCookie, status: 403 });
+    await request("/team", { cookie: workerCookie, status: 403 });
+    await request("/team", { method: "PATCH", cookie: workerCookie, status: 403, data: { userId: member.id, role: "owner", active: true } });
+    await request(`/products/${created.id}`, { method: "DELETE", cookie: workerCookie, status: 204 });
+  }
+  await request("/expenses", { method: "POST", cookie: cashier.cookie, status: 403, data: expenseInput });
+  await request("/debts", { method: "POST", cookie: cashier.cookie, status: 403, data: { direction: "receivable", partyType: "customer", partyName: "Denied", amount: 5 } });
+  await request(`/expenses/${trackedExpense.id}`, { method: "PATCH", cookie, data: { ...expenseInput, amount: 9, expenseDate: "2024-02-01" } });
+  annual = (await request("/finance/yearly?year=2024", { cookie })).body;
+  assert.equal(annual.expensesTotal, 22);
+  assert.equal(annual.months[0].expensesTotal, 0);
+  assert.equal(annual.months[1].expensesTotal, 9);
+  await request(`/expenses/${trackedExpense.id}`, { method: "DELETE", cookie, status: 204 });
+  assert.equal((await request("/finance/yearly?year=2024", { cookie })).body.expensesTotal, 13);
+  const currentAnnual = (await request(`/finance/yearly?year=${part("year")}`, { cookie })).body;
+  const currentMonthly = (await request(`/finance/monthly?month=${month}`, { cookie })).body;
+  assert.equal(currentAnnual.salesRevenue, 0, "Cancelled sales must not count in annual revenue");
+  assert.equal(currentAnnual.costOfGoodsSold, 0);
+  assert.equal(currentAnnual.months.find(row => row.month === month).netProfit, currentMonthly.netProfit);
+  console.log("PASS: inventory, suppliers, debts, cancellations, backups; warehouse/purchasing/manager operations; owner-only expenses and staff; annual totals, boundaries, empty months, edit/delete recalculation.");
 } finally {
   server.kill("SIGTERM");
   await exited;

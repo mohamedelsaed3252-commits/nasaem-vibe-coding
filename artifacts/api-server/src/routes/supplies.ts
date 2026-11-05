@@ -15,11 +15,11 @@ import {
   debtsTable,
   debtPaymentsTable,
 } from "@workspace/db";
-import { requireAppRole } from "../middlewares/appAuth";
+import { operationalRoles, requireAppRole } from "../middlewares/appAuth";
 
 const router: IRouter = Router();
 const requireManager = (req: Parameters<typeof requireAppRole>[1], res: Parameters<typeof requireAppRole>[2], next: Parameters<typeof requireAppRole>[3]) =>
-  requireAppRole(["owner", "manager"], req, res, next);
+  requireAppRole(operationalRoles, req, res, next);
 
 router.get("/supplies", async (req, res): Promise<void> => {
   const params = ListSuppliesQueryParams.safeParse(req.query);

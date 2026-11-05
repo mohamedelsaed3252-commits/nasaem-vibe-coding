@@ -10,6 +10,8 @@ export const appRoleEnum = pgEnum("nasaem_app_role", [
   "owner",
   "manager",
   "cashier",
+  "warehouse",
+  "purchasing",
 ]);
 
 export const staffTable = pgTable("nasaem_staff", {

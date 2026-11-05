@@ -529,6 +529,67 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
+  /expenses/{id}:
+    patch:
+      operationId: updateExpense
+      tags: [finance]
+      summary: Owner-only correction of an operating expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ExpenseInput" }
+      responses:
+        "200":
+          description: Corrected expense
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Expense" }
+        "400":
+          description: Invalid expense
+        "403":
+          description: Owner access required
+        "404":
+          description: Expense not found
+    delete:
+      operationId: deleteExpense
+      tags: [finance]
+      summary: Owner-only deletion of an incorrect operating expense
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204":
+          description: Expense deleted
+        "403":
+          description: Owner access required
+        "404":
+          description: Expense not found
+  /finance/yearly:
+    get:
+      operationId: getYearlyFinance
+      tags: [finance]
+      summary: Calculate annual profit with a twelve-month breakdown
+      parameters:
+        - name: year
+          in: query
+          required: true
+          schema: { type: integer, minimum: 2000, maximum: 2200 }
+      responses:
+        "200":
+          description: Annual profit summary
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/YearlyFinance" }
+        "400":
+          description: Invalid year
   /finance/monthly:
     get:
       operationId: getMonthlyFinance
@@ -646,7 +707,7 @@ components:
         id: { type: string }
         displayName: { type: string }
         email: { type: string }
-        role: { type: string, enum: [owner, manager, cashier] }
+        role: { type: string, enum: [owner, manager, cashier, warehouse, purchasing] }
         active: { type: boolean }
         pendingApproval: { type: boolean }
         createdAt: { type: string, format: date-time }
@@ -909,6 +970,21 @@ components:
         category: { type: string }
         total: { type: number }
       required: [category, total]
+    YearlyFinance:
+      type: object
+      required: [year, salesRevenue, costOfGoodsSold, grossProfit, expensesTotal, netProfit, months]
+      properties:
+        year: { type: integer }
+        salesRevenue: { type: number }
+        costOfGoodsSold: { type: number }
+        grossProfit: { type: number }
+        expensesTotal: { type: number }
+        netProfit: { type: number }
+        months:
+          type: array
+          minItems: 12
+          maxItems: 12
+          items: { $ref: "#/components/schemas/MonthlyFinance" }
     MonthlyFinance:
       type: object
       properties:
@@ -926,7 +1002,7 @@ components:
       type: object
       properties:
         userId: { type: string }
-        role: { type: string, enum: [owner, manager, cashier] }
+        role: { type: string, enum: [owner, manager, cashier, warehouse, purchasing] }
         active: { type: boolean }
       required: [userId, role]
     Backup:

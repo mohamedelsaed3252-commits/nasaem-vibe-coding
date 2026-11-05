@@ -4,7 +4,8 @@ import { and, eq, inArray, sql } from "drizzle-orm";
 import { db, isLocalMode, staffTable } from "@workspace/db";
 import { getLocalSessionUserId } from "./localSession";
 
-export type AppRole = "owner" | "manager" | "cashier";
+export type AppRole = "owner" | "manager" | "cashier" | "warehouse" | "purchasing";
+export const operationalRoles: AppRole[] = ["owner", "manager", "warehouse", "purchasing"];
 export type AppStaff = typeof staffTable.$inferSelect;
 
 export async function ensureCurrentStaff(userId: string): Promise<AppStaff> {

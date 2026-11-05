@@ -16,7 +16,7 @@ import {
   getListSalesQueryKey, getGetSaleInvoiceQueryKey, getListSuppliesQueryKey,
   getListTeamMembersQueryKey, getExportBackupQueryKey,
   useListDebts, useCreateDebt, useCreateDebtPayment, useListExpenses,
-  useCreateExpense, useGetMonthlyFinance
+  useCreateExpense, useUpdateExpense, useDeleteExpense, useGetMonthlyFinance
 } from '@workspace/api-client-react';
 import type { Product, ProductInput, AppUser, Sale, Debt, Expense } from '@workspace/api-client-react';
 import { Route, Switch, Redirect, useLocation, Router as WouterRouter, Link } from 'wouter';
@@ -27,13 +27,16 @@ import { PRODUCT_CATEGORIES } from '@/lib/product-categories';
 import { ErrorBoundary } from '@/components/error-boundary';
 import { Toaster } from '@/components/ui/toaster';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { formatMoney } from '@/lib/currency';
+import { canOperate, roleLabels, roleName } from '@/lib/permissions';
+import { YearlyFinanceReport } from '@/components/yearly-finance-report';
 
 const basePath = import.meta.env.BASE_URL.replace(/\/$/, '');
 const localMode = import.meta.env.VITE_LOCAL_MODE === 'true';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchInterval: localMode ? 5_000 : false,
+      refetchInterval: localMode ? 5_000 : 30_000,
       refetchOnWindowFocus: true,
     },
   },
@@ -68,7 +71,7 @@ const navItems = [
   { href: '/products', label: 'المنتجات والمخزون', icon: Package },
   { href: '/sales', label: 'المبيعات والفواتير', icon: ShoppingCart },
   { href: '/supplies', label: 'التوريدات', icon: Truck },
-  { href: '/finance', label: 'الربح الشهري', icon: ChartNoAxesCombined },
+  { href: '/finance', label: 'الأرباح والتقارير', icon: ChartNoAxesCombined },
   { href: '/debts', label: 'الديون والمدفوعات', icon: ArrowLeftRight },
   { href: '/team', label: 'فريق العمل', icon: Users },
   { href: '/backup', label: 'النسخ الاحتياطي', icon: Archive }
@@ -102,6 +105,13 @@ function Landing() {
 function SignInPage() { return <div className="landing min-h-[100dvh] flex items-center justify-center px-4"><SignIn routing="path" path={`${basePath}/sign-in`} signUpUrl={`${basePath}/sign-up`} /></div>; }
 function SignUpPage() { return <div className="landing min-h-[100dvh] flex items-center justify-center px-4"><SignUp routing="path" path={`${basePath}/sign-up`} signInUrl={`${basePath}/sign-in`} /></div>; }
 
+const managementActions: Record<string, string> = {
+  'المنتجات والمخزون': 'إضافة منتج',
+  'التوريدات': 'تسجيل توريد',
+  'الربح الشهري': 'تسجيل مصروف',
+  'الديون والمدفوعات': 'تسجيل دين',
+};
+
 function Shell({ children, pageTitle }: { children: ReactNode; pageTitle: string }) {
   const [loc] = useLocation();
   const { signOut } = useAuthActions();
@@ -121,7 +131,18 @@ function Shell({ children, pageTitle }: { children: ReactNode; pageTitle: string
     <aside className="sidebar"><Brand /><div className="nav-label">القائمة الرئيسية</div><nav>{navItems.map(({ href, label, icon: Icon }) => <Link href={href} key={href} className={`nav-link ${loc === href ? 'active' : ''}`} data-testid={`link-nav-${href.slice(1)}`}><Icon /><span>{label}</span>{href === '/team' && canReviewApprovals && pendingApprovals.length > 0 && <span data-testid="badge-pending-approvals" aria-label={`${fmt(pendingApprovals.length)} موافقات معلقة`} style={{ marginInlineStart: 'auto', minWidth: 19, padding: '1px 6px', borderRadius: 999, background: '#b94339', color: 'white', fontSize: 10, fontWeight: 700, textAlign: 'center' }}>{fmt(pendingApprovals.length)}</span>}</Link>)}</nav>
       <div className="sidebar-bottom"><button className="nav-link" onClick={() => { void signOut(); }} data-testid="button-sign-out"><LogOut /><span>تسجيل الخروج</span></button><div className="subtle" style={{ color: '#aac0b2', padding: '10px 12px' }}>نسايم · نسخة المتجر</div></div>
     </aside>
-    <main className="main"><header className="topbar"><div><div className="top-greeting">مساحة العمل / {pageTitle}</div><div className="top-name">{pageTitle}</div></div><div className="user-chip"><span className="role-note subtle">{user?.role === 'owner' ? 'مالك المتجر' : user?.role === 'manager' ? 'مدير' : user?.role === 'cashier' ? 'أمين صندوق' : '...'}</span><div className="avatar">{user?.displayName?.slice(0, 1) || 'ن'}</div></div></header>
+    <main className="main"><header className="topbar"><div><div className="top-greeting">مساحة العمل / {pageTitle}</div><div className="top-name">{pageTitle}</div></div>
+      <details className="account-menu">
+        <summary className="user-chip" aria-label="الحساب والصلاحيات" data-testid="button-account-menu"><span className="account-role">{roleName(user?.role)}</span><div className="avatar">{user?.displayName?.slice(0, 1) || 'ن'}</div></summary>
+        <div className="account-menu-panel">
+          <strong>{user?.displayName}</strong>
+          <div className="account-email" dir="ltr" data-testid="text-account-email">{user?.email}</div>
+          <p data-testid="text-account-role">الصلاحية: {roleName(user?.role)}</p>
+          <p className="subtle">نفس الحساب له نفس الصلاحيات على الكمبيوتر والموبايل. المالك يحدد مسؤول المخازن والمشتريات من فريق العمل.</p>
+          <button className="button ghost" type="button" onClick={() => { void signOut(); }} data-testid="button-switch-account"><LogOut />تسجيل الخروج وتبديل الحساب</button>
+        </div>
+      </details>
+    </header>
       {loc === '/dashboard' && canReviewApprovals && pendingApprovals.length > 0 && <section role="status" aria-live="polite" data-testid="notice-pending-approvals" style={{ margin: '18px 22px 0', padding: '15px 18px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 12, border: '1px solid #ecdca7', borderRadius: 12, background: '#fff8dc', color: '#765e18' }}>
         <div><strong>هناك حسابات جديدة تنتظر موافقتك</strong><div style={{ marginTop: 4, fontSize: 13 }}>عدد طلبات الموافقة: {fmt(pendingApprovals.length)}.</div></div>
         <Link href="/team" className="button" data-testid="link-review-pending-approvals">مراجعة الطلبات</Link>
@@ -145,7 +166,15 @@ function Guard({ children }: { children: ReactNode }) {
   return <AccountGate>{children}</AccountGate>;
 }
 function PageFrame({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: ReactNode; children: ReactNode }) {
-  return <div className="page"><div className="page-head"><div><div className="eyebrow">نسايم للمنظفات</div><h1 className="page-title">{title}</h1>{subtitle && <p className="page-sub">{subtitle}</p>}</div>{action}</div>{children}</div>;
+  const profile = useGetCurrentUser();
+  const financePage = title === 'الربح الشهري';
+  const restricted = Boolean(managementActions[title]) && Boolean(profile.data) &&
+    (financePage ? profile.data?.role !== 'owner' : !canOperate(profile.data?.role));
+  return <div className="page"><div className="page-head"><div className="page-heading"><div className="eyebrow">نسايم للمنظفات</div><h1 className="page-title">{title}</h1>{subtitle && <p className="page-sub">{subtitle}</p>}</div>
+    <div className="page-actions">{action ?? (restricted && <button type="button" className="button" disabled aria-describedby="management-access-note"><ShieldCheck />{managementActions[title]} — {financePage ? 'للمالك فقط' : 'يتطلب صلاحية تشغيل'}</button>)}</div>
+    </div>
+    {restricted && <section className="management-access-note" id="management-access-note" role="note" data-testid="notice-management-access"><ShieldCheck /><div><strong>صلاحيتك الحالية: {roleName(profile.data?.role)}</strong><p>{financePage ? 'التقارير الشهرية والسنوية للعرض. تسجيل المصروفات وتعديلها وحذفها، وبالتالي تعديل حساب الربح، متاح للمالك فقط.' : 'إدارة المنتجات والتوريدات والديون متاحة للمالك ومدير التشغيل ومسؤولي المخازن والمشتريات. اطلب من المالك تحديد دورك من «فريق العمل».'}</p></div></section>}
+    {children}</div>;
 }
 function Loading({ count = 3 }: { count?: number }) { return <div className="stats-grid">{Array.from({ length: count }, (_, i) => <div className="skeleton-card" key={i} />)}</div>; }
 function QueryState({ loading, error, retry, empty, children }: { loading: boolean; error: boolean; retry: () => void; empty?: boolean; children?: ReactNode }) {
@@ -155,7 +184,7 @@ function QueryState({ loading, error, retry, empty, children }: { loading: boole
   return <>{children}</>;
 }
 function fmt(value: number) { return new Intl.NumberFormat('ar', { maximumFractionDigits: 2 }).format(value || 0); }
-function money(value: number) { return `${fmt(value)} ر.س`; }
+function money(value: number) { return formatMoney(value); }
 function date(value: string) { return new Date(value).toLocaleString('ar-SA', { calendar: 'gregory', dateStyle: 'medium', timeStyle: 'short' }); }
 function useNotify() {
   const [message, setMessage] = useState('');
@@ -188,7 +217,7 @@ function DashboardPage() {
 function Modal({ title, close, children }: { title: string; close: () => void; children: ReactNode }) {
   return <div className="modal-backdrop" onMouseDown={e => { if (e.target === e.currentTarget) close(); }}><section className="modal" role="dialog" aria-modal="true"><div className="modal-head"><div className="modal-title">{title}</div><button className="icon-button" aria-label="إغلاق" onClick={close}><X /></button></div><div className="modal-body">{children}</div></section></div>;
 }
-const isManager = (role?: string) => role === 'owner' || role === 'manager';
+const isManager = canOperate;
 function ProductForm({ existing, close, onSaved }: { existing?: Product; close: () => void; onSaved: () => void }) {
   const create = useCreateProduct(); const update = useUpdateProduct(); const client = useQueryClient(); const { notify, toast } = useNotify();
   const [form, setForm] = useState({ name: existing?.name || '', sku: existing?.sku || '', category: existing?.category || '', unit: existing?.unit || 'عبوة', unitsPerCarton: String(existing?.unitsPerCarton ?? 1), cartons: '0', looseUnits: String(existing?.stock ?? 0), purchasePrice: String(existing?.purchasePrice ?? ''), sellingPrice: String(existing?.sellingPrice ?? ''), lowStockThreshold: String(existing?.lowStockThreshold ?? 5) });
@@ -215,7 +244,7 @@ function StockModal({ product, close, onSaved }: { product: Product; close: () =
     <div className="form-grid"><label className="form-field">فرق الكراتين<input type="number" step="1" required value={cartons} onChange={e => setCartons(e.target.value)} placeholder="استخدم السالب للخصم" /></label><label className="form-field">فرق القطع<input type="number" step=".001" required value={pieces} onChange={e => setPieces(e.target.value)} placeholder="مثال: 3 أو -2" /></label><div className="span2 panel" style={{ padding: 12 }}>كل كرتونة = {fmt(product.unitsPerCarton ?? 1)} قطعة · التغيير الإجمالي: <b>{fmt(totalDelta)} {product.unit}</b></div><label className="form-field span2">سبب التعديل<input required value={reason} onChange={e => setReason(e.target.value)} /></label></div><div className="form-actions"><button className="button" disabled={mutation.isPending || totalDelta === 0}>تأكيد التعديل</button><button type="button" className="button ghost" onClick={close}>إلغاء</button></div></form>{toast}</Modal>;
 }
 function invalidateStore(client: ReturnType<typeof useQueryClient>) {
-  return client.invalidateQueries({ predicate: q => { const k = q.queryKey[0]; return typeof k === 'string' && ['/api/products', '/api/sales', '/api/dashboard', '/api/activity'].some(p => k.startsWith(p)); } });
+  return client.invalidateQueries({ predicate: q => { const k = q.queryKey[0]; return typeof k === 'string' && ['/api/products', '/api/sales', '/api/dashboard', '/api/activity', '/api/finance'].some(p => k.startsWith(p)); } });
 }
 function ArchiveDialog({ product, close: dismiss, onDone }: { product: Product; close: () => void; onDone: (msg: string) => void }) {
   const remove = useDeleteProduct(); const client = useQueryClient();
@@ -311,7 +340,7 @@ function SalesPage() {
         <div className="line-actions">{canManage && p && <button type="button" className="act" onClick={() => setEditingProduct(p)}><Pencil />تعديل المنتج</button>}<button type="button" className="act danger" onClick={() => setLines(prev => prev.filter((_, n) => n !== i))} data-testid={`button-remove-line-${i}`}><Trash2 />إزالة</button></div>
       </div>; })}
       <button type="button" className="button ghost" onClick={() => setLines(prev => [...prev, { productId: '', quantity: 1 }])} data-testid="button-add-line"><Plus />إضافة صنف</button>
-      <div className="form-grid" style={{ marginTop: 18 }}><label className="form-field">التخفيض (ر.س)<input type="number" min="0" step=".01" value={discount} onChange={e => setDiscount(e.target.value)} /></label><label className="form-field">ملاحظات<input value={notes} onChange={e => setNotes(e.target.value)} /></label></div>
+      <div className="form-grid" style={{ marginTop: 18 }}><label className="form-field">التخفيض (جنيه)<input type="number" min="0" step=".01" value={discount} onChange={e => setDiscount(e.target.value)} /></label><label className="form-field">ملاحظات<input value={notes} onChange={e => setNotes(e.target.value)} /></label></div>
       <div className="totals" data-testid="draft-totals"><div><span>المجموع</span><b>{money(subtotal)}</b></div><div><span>التخفيض</span><b>{money(disc)}</b></div><div className="grand"><span>الإجمالي المطلوب</span><b>{money(total)}</b></div>{disc > subtotal && <div className="inline-error"><CircleAlert />التخفيض أكبر من المجموع</div>}</div>
       <div className="form-actions"><button className="button big" disabled={create.isPending || !validLines.length} data-testid="button-save-sale">{create.isPending ? 'جارٍ تسجيل البيع…' : `حفظ البيع · ${money(total)}`}</button><button type="button" className="button ghost" onClick={closeSale}>إغلاق</button></div></form></Modal>}
     {editingProduct && <Modal title="تعديل بيانات المنتج" close={() => setEditingProduct(undefined)}><ProductForm existing={editingProduct} close={() => setEditingProduct(undefined)} onSaved={() => { setEditingProduct(undefined); void invalidateStore(client); }} /></Modal>}
@@ -369,22 +398,38 @@ function localDateInput() {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 function FinancePage() {
-  const user = useGetCurrentUser(); const canManage = isManager(user.data?.role); const client = useQueryClient(); const { notify, toast } = useNotify();
+  const user = useGetCurrentUser(); const canManage = user.data?.role === 'owner'; const client = useQueryClient(); const { notify, toast } = useNotify();
   const [month, setMonth] = useState(() => localDateInput().slice(0, 7)); const [adding, setAdding] = useState(false);
+  const [period, setPeriod] = useState<'monthly' | 'yearly'>('monthly');
+  const [year, setYear] = useState(() => Number(localDateInput().slice(0, 4)));
+  const [editing, setEditing] = useState<Expense | null>(null);
+  const [deleting, setDeleting] = useState<Expense | null>(null);
   const [category, setCategory] = useState<(typeof expenseCategories)[number]['value']>('electricity');
   const [amount, setAmount] = useState(''); const [expenseDate, setExpenseDate] = useState(localDateInput()); const [notes, setNotes] = useState('');
   const summary = useGetMonthlyFinance({ month }); const expenses = useListExpenses({ month }); const create = useCreateExpense();
-  const reset = () => { setAdding(false); setAmount(''); setExpenseDate(localDateInput()); setNotes(''); setCategory('electricity'); };
+  const update = useUpdateExpense(); const remove = useDeleteExpense();
+  const refreshFinance = () => { void client.invalidateQueries({ queryKey: ['/api/finance/monthly'] }); void client.invalidateQueries({ queryKey: ['/api/finance/yearly'] }); void client.invalidateQueries({ queryKey: ['/api/expenses'] }); };
+  const reset = () => { setAdding(false); setEditing(null); setAmount(''); setExpenseDate(localDateInput()); setNotes(''); setCategory('electricity'); };
+  const editExpense = (item: Expense) => { setEditing(item); setCategory(item.category); setAmount(String(item.amount)); setExpenseDate(item.expenseDate); setNotes(item.notes ?? ''); setAdding(true); };
   function submit(e: FormEvent) {
     e.preventDefault();
-    create.mutate({ data: { category, amount: Number(amount), expenseDate, notes: notes || null } }, {
-      onSuccess: () => { void client.invalidateQueries({ queryKey: ['/api/finance/monthly'] }); void client.invalidateQueries({ queryKey: ['/api/expenses'] }); notify('تم تسجيل المصروف وتحديث صافي الربح'); reset(); },
-      onError: () => notify('تعذر تسجيل المصروف'),
-    });
+    if (!canManage) return;
+    const data = { category, amount: Number(amount), expenseDate, notes: notes || null };
+    const callbacks = { onSuccess: () => { refreshFinance(); notify('تم حفظ المصروف وتحديث الربح الشهري والسنوي'); reset(); }, onError: () => notify('تعذر حفظ المصروف') };
+    if (editing) update.mutate({ id: editing.id, data }, callbacks);
+    else create.mutate({ data }, callbacks);
   }
   const report = summary.data;
   return <Shell pageTitle="الربح الشهري"><PageFrame title="الربح الشهري" subtitle="المبيعات ناقص تكلفة البضاعة المباعة فعلًا، ثم خصم المصروفات التشغيلية." action={canManage ? <button className="button green" onClick={() => setAdding(true)}><Plus />تسجيل مصروف</button> : undefined}>
-    <div className="panel" style={{ marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><div className="panel-title">الفترة المحاسبية</div><div className="panel-caption">يُحسب الشهر حسب توقيت المحل، ولا تُحسب الفواتير الملغاة.</div></div><label className="form-field" style={{ minWidth: 180 }}>اختر الشهر<input aria-label="الشهر" type="month" value={month} onChange={e => setMonth(e.target.value)} /></label></div>
+    <div className="seg" role="group" aria-label="نوع تقرير الربح" style={{ marginBottom: 16 }}>
+      <button className={period === 'monthly' ? 'on' : ''} aria-pressed={period === 'monthly'} onClick={() => setPeriod('monthly')}>التقرير الشهري</button>
+      <button className={period === 'yearly' ? 'on' : ''} aria-pressed={period === 'yearly'} onClick={() => setPeriod('yearly')}>التقرير السنوي</button>
+    </div>
+    <div className="panel" style={{ padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}><div><div className="panel-title">الفترة المحاسبية</div><div className="panel-caption">حسب توقيت المحل والتقويم الميلادي، دون الفواتير الملغاة. الربح محسوب وليس رقمًا يُدخل يدويًا.</div></div>
+      {period === 'monthly' ? <label key="month-selector" className="form-field" style={{ minWidth: 180 }}>اختر الشهر<input aria-label="الشهر" type="month" value={month} onChange={e => { if (e.target.value) setMonth(e.target.value); }} /></label> :
+        <label key="year-selector" className="form-field" style={{ minWidth: 180 }}>اختر السنة<select aria-label="السنة" value={year} onChange={e => setYear(Number(e.target.value))}>{Array.from({ length: 201 }, (_, i) => 2000 + i).map(y => <option key={y} value={y}>{y}</option>)}</select></label>}
+    </div>
+    {period === 'yearly' ? <YearlyFinanceReport year={year} onMonth={selected => { setMonth(selected); setPeriod('monthly'); }} /> : <>
     <QueryState loading={summary.isLoading} error={summary.isError} retry={() => summary.refetch()}>
       {report && <div className="stats-grid">
         <Stat label="إجمالي المبيعات" value={money(report.salesRevenue)} note="فواتير مكتملة فقط" icon={ShoppingCart} />
@@ -396,15 +441,17 @@ function FinancePage() {
     </QueryState>
     <div className="panel" style={{ marginTop: 16 }}><div className="panel-head"><div><div className="panel-title">تفصيل مصروفات الشهر</div><div className="panel-caption">الكهرباء والمياه والإيجار والمرتبات وغيرها</div></div></div>
       <QueryState loading={expenses.isLoading} error={expenses.isError} retry={() => expenses.refetch()} empty={!expenses.isLoading && !expenses.isError && !expenses.data?.length}>
-        <div className="table-wrap"><table className="data-table"><thead><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th><th>ملاحظات</th><th>سجلها</th></tr></thead><tbody>{expenses.data?.map(item => <tr key={item.id}><td>{item.expenseDate}</td><td>{expenseCategories.find(c => c.value === item.category)?.label ?? item.category}</td><td><b>{money(item.amount)}</b></td><td>{item.notes || '—'}</td><td>{item.actorName}</td></tr>)}</tbody></table></div>
+        <div className="table-wrap"><table className="data-table cards-mobile"><thead><tr><th>التاريخ</th><th>البند</th><th>المبلغ</th><th>ملاحظات</th><th>سجلها</th>{canManage && <th>الإجراءات</th>}</tr></thead><tbody>{expenses.data?.map(item => <tr key={item.id}><td data-label="التاريخ">{item.expenseDate}</td><td data-label="البند">{expenseCategories.find(c => c.value === item.category)?.label ?? item.category}</td><td data-label="المبلغ"><b>{money(item.amount)}</b></td><td data-label="ملاحظات">{item.notes || '—'}</td><td data-label="سجلها">{item.actorName}</td>{canManage && <td className="actions-cell"><div className="actions"><button className="act" onClick={() => editExpense(item)} aria-label={`تعديل مصروف ${item.amount} جنيه`}><Pencil />تعديل</button><button className="act danger" onClick={() => setDeleting(item)} aria-label={`حذف مصروف ${item.amount} جنيه`}><Trash2 />حذف</button></div></td>}</tr>)}</tbody></table></div>
       </QueryState>
     </div>
-    {adding && <Modal title="تسجيل مصروف تشغيلي" close={reset}><form onSubmit={submit}><div className="form-grid">
+    </>}
+    {adding && canManage && <Modal title={editing ? 'تعديل مصروف تشغيلي' : 'تسجيل مصروف تشغيلي'} close={reset}><form onSubmit={submit}><div className="form-grid">
       <label className="form-field">نوع المصروف<select value={category} onChange={e => setCategory(e.target.value as typeof category)}>{expenseCategories.map(item => <option value={item.value} key={item.value}>{item.label}</option>)}</select></label>
       <label className="form-field">المبلغ<input required type="number" min=".01" step=".01" value={amount} onChange={e => setAmount(e.target.value)} /></label>
       <label className="form-field">تاريخ المصروف<input required type="date" value={expenseDate} onChange={e => setExpenseDate(e.target.value)} /></label>
       <label className="form-field span2">ملاحظات<input value={notes} onChange={e => setNotes(e.target.value)} placeholder="مثال: فاتورة الكهرباء" /></label>
-    </div><div className="form-actions"><button className="button green" disabled={create.isPending}>{create.isPending ? 'جارٍ الحفظ…' : 'حفظ المصروف'}</button><button type="button" className="button ghost" onClick={reset}>إلغاء</button></div></form></Modal>}
+    </div><div className="form-actions"><button className="button green" disabled={create.isPending || update.isPending}>{create.isPending || update.isPending ? 'جارٍ الحفظ…' : 'حفظ المصروف'}</button><button type="button" className="button ghost" onClick={reset}>إلغاء</button></div></form></Modal>}
+    {deleting && canManage && <Modal title="حذف المصروف؟" close={() => setDeleting(null)}><p>سيُحذف مصروف بقيمة {money(deleting.amount)} ويُعاد حساب الربح الشهري والسنوي. هل تؤكد الحذف؟</p><div className="form-actions"><button className="button danger" disabled={remove.isPending} onClick={() => remove.mutate({ id: deleting.id }, { onSuccess: () => { refreshFinance(); setDeleting(null); notify('تم حذف المصروف وتحديث الربح'); }, onError: () => notify('تعذر حذف المصروف') })}>تأكيد حذف المصروف</button><button className="button ghost" onClick={() => setDeleting(null)}>رجوع</button></div></Modal>}
     {toast}
   </PageFrame></Shell>;
 }
@@ -465,7 +512,28 @@ function TeamPage() {
       onError: () => notify('تعذر تحديث بيانات العضو')
     });
   };
-  return <Shell pageTitle="فريق العمل"><PageFrame title="فريق العمل" subtitle="إدارة صلاحيات الوصول إلى بيانات المتجر"><div className="panel"><div className="panel-head"><div><div className="panel-title">أعضاء الفريق</div><div className="panel-caption">الأدوار وحالة الحساب تحددان الوصول إلى المتجر</div></div><ShieldCheck size={18} color="#78927f" /></div><QueryState loading={q.isLoading} error={q.isError} retry={() => q.refetch()} empty={!q.isLoading && !q.isError && !q.data?.length}><div className="table-wrap"><table className="data-table"><thead><tr><th>الموظف</th><th>البريد الإلكتروني</th><th>الدور</th><th>حالة الحساب</th><th>تاريخ الانضمام</th></tr></thead><tbody>{q.data?.map((m: AppUser) => <tr key={m.id}><td className="product-cell">{m.displayName}</td><td dir="ltr" style={{ textAlign: 'right' }}>{m.email}</td><td>{canManage ? <select className="filter-select" value={m.role} disabled={change.isPending} aria-label={`دور ${m.displayName}`} onChange={e => updateMember(m, { role: e.target.value as AppUser['role'] })}><option value="owner">مالك</option><option value="manager">مدير</option><option value="cashier">أمين صندوق</option></select> : <span className="pill">{m.role === 'owner' ? 'مالك' : m.role === 'manager' ? 'مدير' : 'أمين صندوق'}</span>}</td><td>{canManage ? <button type="button" className={`pill ${m.active ? '' : 'warning'}`} disabled={change.isPending} onClick={() => updateMember(m, { active: !m.active })} aria-label={`${m.active ? 'تعطيل' : 'تفعيل'} حساب ${m.displayName}`} data-testid={`button-toggle-member-${m.id}`}>{m.pendingApproval ? 'بانتظار الموافقة · تفعيل' : m.active ? 'نشط · إيقاف' : 'معطّل · تفعيل'}</button> : <span className={`pill ${m.active ? '' : 'warning'}`}>{m.pendingApproval ? 'بانتظار الموافقة' : m.active ? 'نشط' : 'معطّل'}</span>}</td><td>{date(m.createdAt)}</td></tr>)}</tbody></table></div></QueryState></div>{!canManage && <p className="page-sub" style={{ marginTop: 14 }}>تغيير الأدوار وحالة الحساب متاح لمالك المتجر فقط.</p>}{toast}</PageFrame></Shell>;
+  return <Shell pageTitle="فريق العمل"><PageFrame title="فريق العمل" subtitle="المالك وحده يحدد أدوار الموظفين ويفعّل حساباتهم">
+    <div className="panel" style={{ padding: 18, marginBottom: 16, lineHeight: 1.9 }}>
+      <strong>دليل الصلاحيات</strong>
+      <div>المالك: كل العمليات، وإدارة الموظفين، وتسجيل وتعديل وحذف المصروفات.</div>
+      <div>مسؤول المخازن / مسؤول المشتريات / مدير التشغيل: المنتجات والكميات والتوريدات والبيع والديون والمدفوعات، دون تعديل المصروفات أو إدارة الموظفين.</div>
+      <div>أمين الصندوق: تسجيل المبيعات فقط، دون تعديل المخزون أو الحسابات.</div>
+    </div>
+    <div className="panel"><div className="panel-head"><div><div className="panel-title">أعضاء الفريق</div><div className="panel-caption">الأدوار نفسها على الكمبيوتر والموبايل</div></div><ShieldCheck size={18} color="#78927f" /></div>
+      <QueryState loading={q.isLoading} error={q.isError} retry={() => q.refetch()} empty={!q.isLoading && !q.isError && !q.data?.length}>
+        <div className="table-wrap"><table className="data-table cards-mobile"><thead><tr><th>الموظف</th><th>البريد الإلكتروني</th><th>الدور</th><th>حالة الحساب</th><th>تاريخ الانضمام</th></tr></thead><tbody>
+          {q.data?.map((m: AppUser) => <tr key={m.id}>
+            <td className="product-cell">{m.displayName}</td><td data-label="البريد الإلكتروني"><span dir="ltr">{m.email}</span></td>
+            <td data-label="الدور">{canManage ? <select className="filter-select" value={m.role} disabled={change.isPending} aria-label={`دور ${m.displayName}`} onChange={e => updateMember(m, { role: e.target.value as AppUser['role'] })}>
+              {Object.entries(roleLabels).map(([role, label]) => <option value={role} key={role}>{label}</option>)}
+            </select> : <span className="pill">{roleName(m.role)}</span>}</td>
+            <td data-label="حالة الحساب">{canManage ? <button type="button" className={`pill ${m.active ? '' : 'warning'}`} disabled={change.isPending} onClick={() => updateMember(m, { active: !m.active })} aria-label={`${m.active ? 'تعطيل' : 'تفعيل'} حساب ${m.displayName}`} data-testid={`button-toggle-member-${m.id}`}>{m.pendingApproval ? 'بانتظار الموافقة · تفعيل' : m.active ? 'نشط · إيقاف' : 'معطّل · تفعيل'}</button> : <span className={`pill ${m.active ? '' : 'warning'}`}>{m.pendingApproval ? 'بانتظار الموافقة' : m.active ? 'نشط' : 'معطّل'}</span>}</td>
+            <td data-label="تاريخ الانضمام">{date(m.createdAt)}</td>
+          </tr>)}
+        </tbody></table></div>
+      </QueryState>
+    </div>{!canManage && <p className="page-sub" style={{ marginTop: 14 }}>تغيير الأدوار وحالة الحساب متاح لمالك المتجر فقط.</p>}{toast}
+  </PageFrame></Shell>;
 }
 
 function BackupPage() {

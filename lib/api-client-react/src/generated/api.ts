@@ -31,6 +31,7 @@ import type {
   Expense,
   ExpenseInput,
   GetMonthlyFinanceParams,
+  GetYearlyFinanceParams,
   HealthStatus,
   Invoice,
   ListExpensesParams,
@@ -52,7 +53,8 @@ import type {
   StockAdjustmentInput,
   Supply,
   SupplyInput,
-  TeamRoleUpdate
+  TeamRoleUpdate,
+  YearlyFinance
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -2084,6 +2086,253 @@ export const useCreateExpense = <TError = ErrorType<Error>,
       > => {
       return useMutation(getCreateExpenseMutationOptions(options));
     }
+
+export const getUpdateExpenseUrl = (id: string,) => {
+
+
+
+
+  return `/api/expenses/${id}`
+}
+
+/**
+ * @summary Owner-only correction of an operating expense
+ */
+export const updateExpense = async (id: string,
+    expenseInput: ExpenseInput, options?: Parameters<typeof customFetch>[1]): Promise<Expense> => {
+
+    const getHeaders = (h?: NonNullable<RequestInit['headers']>): Record<string, string | readonly string[]> => {
+    if (!h) return {};
+    if (h instanceof Headers) return Object.fromEntries(h.entries());
+    if (Symbol.iterator in h) {
+      return Object.fromEntries(
+        Array.from(h as Iterable<Iterable<string>>, (entry) => Array.from(entry) as [string, string]),
+      );
+    }
+    const headers: Record<string, string | readonly string[]> = {};
+    for (const [name, value] of Object.entries<string | readonly string[] | undefined>(h)) {
+      if (value !== undefined) headers[name] = value;
+    }
+    return headers;
+  };
+return customFetch<Expense>(getUpdateExpenseUrl(id),
+  {
+    ...options,
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...getHeaders(options?.headers) },
+    body: JSON.stringify(expenseInput)
+  }
+);}
+
+
+
+
+
+export const getUpdateExpenseMutationKey = () => ['updateExpense'] as const;
+
+export const getUpdateExpenseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateExpense>>, TError,UpdateExpenseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof updateExpense>>, TError,UpdateExpenseMutationVariables, TContext> => {
+
+const mutationKey = getUpdateExpenseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof updateExpense>>, UpdateExpenseMutationVariables> = (props) => {
+          const {id,data} = props ?? {};
+
+          return  updateExpense(id,data,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type UpdateExpenseMutationResult = NonNullable<Awaited<ReturnType<typeof updateExpense>>>
+    export type UpdateExpenseMutationBody = BodyType<ExpenseInput>
+    export type UpdateExpenseMutationError = ErrorType<void>
+    export type UpdateExpenseMutationVariables = {id: string;data: BodyType<ExpenseInput>}
+
+    /**
+ * @summary Owner-only correction of an operating expense
+ */
+export const useUpdateExpense = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof updateExpense>>, TError,UpdateExpenseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof updateExpense>>,
+        TError,
+        UpdateExpenseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getUpdateExpenseMutationOptions(options));
+    }
+
+export const getDeleteExpenseUrl = (id: string,) => {
+
+
+
+
+  return `/api/expenses/${id}`
+}
+
+/**
+ * @summary Owner-only deletion of an incorrect operating expense
+ */
+export const deleteExpense = async (id: string, options?: Parameters<typeof customFetch>[1]): Promise<void> => {
+
+  return customFetch<void>(getDeleteExpenseUrl(id),
+  {
+    ...options,
+    method: 'DELETE'
+
+
+  }
+);}
+
+
+
+
+
+export const getDeleteExpenseMutationKey = () => ['deleteExpense'] as const;
+
+export const getDeleteExpenseMutationOptions = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteExpense>>, TError,DeleteExpenseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+): UseMutationOptions<Awaited<ReturnType<typeof deleteExpense>>, TError,DeleteExpenseMutationVariables, TContext> => {
+
+const mutationKey = getDeleteExpenseMutationKey();
+const {mutation: mutationOptions, request: requestOptions} = options ?
+      options.mutation && 'mutationKey' in options.mutation && options.mutation.mutationKey ?
+      options
+      : {...options, mutation: {...options.mutation, mutationKey}}
+      : {mutation: { mutationKey, }, request: undefined};
+
+
+
+
+      const mutationFn: MutationFunction<Awaited<ReturnType<typeof deleteExpense>>, DeleteExpenseMutationVariables> = (props) => {
+          const {id} = props ?? {};
+
+          return  deleteExpense(id,requestOptions)
+        }
+
+
+
+
+
+
+  return  { mutationFn, ...mutationOptions }}
+
+    export type DeleteExpenseMutationResult = NonNullable<Awaited<ReturnType<typeof deleteExpense>>>
+
+    export type DeleteExpenseMutationError = ErrorType<void>
+    export type DeleteExpenseMutationVariables = {id: string}
+
+    /**
+ * @summary Owner-only deletion of an incorrect operating expense
+ */
+export const useDeleteExpense = <TError = ErrorType<void>,
+    TContext = unknown>(options?: { mutation?:UseMutationOptions<Awaited<ReturnType<typeof deleteExpense>>, TError,DeleteExpenseMutationVariables, TContext>, request?: SecondParameter<typeof customFetch>}
+ ): UseMutationResult<
+        Awaited<ReturnType<typeof deleteExpense>>,
+        TError,
+        DeleteExpenseMutationVariables,
+        TContext
+      > => {
+      return useMutation(getDeleteExpenseMutationOptions(options));
+    }
+
+export const getGetYearlyFinanceUrl = (params: GetYearlyFinanceParams,) => {
+  const normalizedParams = new URLSearchParams();
+
+  Object.entries(params || {}).forEach(([key, value]) => {
+
+    if (value !== undefined) {
+      normalizedParams.append(key, value === null ? 'null' : String(value))
+    }
+  });
+
+  const stringifiedParams = normalizedParams.toString();
+
+  return stringifiedParams.length > 0 ? `/api/finance/yearly?${stringifiedParams}` : `/api/finance/yearly`
+}
+
+/**
+ * @summary Calculate annual profit with a twelve-month breakdown
+ */
+export const getYearlyFinance = async (params: GetYearlyFinanceParams, options?: Parameters<typeof customFetch>[1]): Promise<YearlyFinance> => {
+
+  return customFetch<YearlyFinance>(getGetYearlyFinanceUrl(params),
+  {
+    ...options,
+    method: 'GET'
+
+
+  }
+);}
+
+
+
+
+
+export const getGetYearlyFinanceQueryKey = (params?: GetYearlyFinanceParams,) => {
+    return [
+    `/api/finance/yearly`, ...(params ? [params] : [])
+    ] as const;
+    }
+
+
+export const getGetYearlyFinanceQueryOptions = <TData = Awaited<ReturnType<typeof getYearlyFinance>>, TError = ErrorType<void>>(params: GetYearlyFinanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getYearlyFinance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+) => {
+
+const {query: queryOptions, request: requestOptions} = options ?? {};
+
+  const queryKey =  queryOptions?.queryKey ?? getGetYearlyFinanceQueryKey(params);
+
+
+
+    const queryFn: QueryFunction<Awaited<ReturnType<typeof getYearlyFinance>>> = ({ signal }) => getYearlyFinance(params, { signal, ...requestOptions });
+
+
+
+
+
+   return  { queryKey, queryFn, ...queryOptions} as UseQueryOptions<Awaited<ReturnType<typeof getYearlyFinance>>, TError, TData> & { queryKey: QueryKey }
+}
+
+export type GetYearlyFinanceQueryResult = NonNullable<Awaited<ReturnType<typeof getYearlyFinance>>>
+export type GetYearlyFinanceQueryError = ErrorType<void>
+
+
+/**
+ * @summary Calculate annual profit with a twelve-month breakdown
+ */
+
+export function useGetYearlyFinance<TData = Awaited<ReturnType<typeof getYearlyFinance>>, TError = ErrorType<void>>(
+ params: GetYearlyFinanceParams, options?: { query?:UseQueryOptions<Awaited<ReturnType<typeof getYearlyFinance>>, TError, TData>, request?: SecondParameter<typeof customFetch>}
+
+ ):  UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+
+  const queryOptions = getGetYearlyFinanceQueryOptions(params,options)
+
+  const query = useQuery(queryOptions) as  UseQueryResult<TData, TError> & { queryKey: QueryKey };
+
+  return withQueryKey(query, queryOptions.queryKey);
+}
+
+
+
+
+
+
 
 export const getGetMonthlyFinanceUrl = (params: GetMonthlyFinanceParams,) => {
   const normalizedParams = new URLSearchParams();
